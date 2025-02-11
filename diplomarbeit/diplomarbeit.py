@@ -62,29 +62,43 @@ def plt_network(network : Curvy):
 
 
 
-def calc_dist(line):
-    dist=[]
-    for i in line.s:
-        if i == 0:
-            dist.append(0)
-        else:
-            dist.append(line.s[i]-line.s[i-1]) # Error: i is np.float64 not list
+# def calc_dist(line):
+#     dist=[]
+#     for i in line.s:
+#         if i == 0:
+#             dist.append(0)
+#         else:
+#             dist.append(line.s[i]-line.s[i-1]) # Error: i is np.float64 not list
+
+def load_data(coordinates: dict):
+    networks = {}
+    n = 0
+    for location in coordinates:
+        try:
+            with open("Pickles/" + location + ".pickle", "rb") as file:
+                new_network = pickle.load(file)
+
+        except FileNotFoundError as msg:
+            print(msg)
+            print(location + ".pickle not found - Starting download")
+            new_network: Curvy = curvy.Curvy(*coordinates[location],
+                                             desired_railway_types=["tram"],
+                                             download=True)  # Liest die Tramstrecken aus
+            new_network.save("Pickles/" + location + ".pickle")
+
+        networks[location] = new_network
+        n += 1
+
+        print(location + " added, " + str(int(n / len(coordinates) * 100)) + "% done")
+    return networks
 
 
 if __name__ == "__main__":
-    coords = {"Wien": (16, 48, 17, 48.5)}  # Koordinaten Wiens
-    try:
-        with open("wien.pickle", "rb") as file:
-            wien_network = pickle.load(file)
+    coords = {"Wien": (16, 48, 17, 48.5), # Koordinaten Wiens
+              "Graz": (15, 46.9, 15.6, 47.2)}
 
-    except FileNotFoundError as msg:
-        print(msg)
-        print("File not found - Starting download")
-        wien_network: Curvy = curvy.Curvy(*coords["Wien"],
-                                          desired_railway_types=["tram"],
-                                          download=True)  # Liest die Tramstrecken Wiens aus
-        wien_network.save("wien.pickle")
-
+    netzwerke = load_data(coords)
+    wien_network = netzwerke["Wien"]
     line_draw = wien_network.railway_lines[0]
     #plt_line(line_draw)
     #plt_curvature(line_draw)
