@@ -2,12 +2,9 @@ import curvy
 from matplotlib import pyplot as plt
 import scipy
 import numpy as np
+import pickle
 
 from curvy import Curvy
-
-coords={"Wien":(16, 48, 17, 48.5)} # Koordinaten Wiens
-#curvy.download_track_data()
-
 
 # for i in curvy.railway_lines:
 #     line = i
@@ -75,10 +72,19 @@ def calc_dist(line):
 
 
 if __name__ == "__main__":
-    wien_network: Curvy = curvy.Curvy(*coords["Wien"],
-                        desired_railway_types=["tram"],
-                        download=True)  # Liest die Tramstrecken Wiens aus
-    print("Download finished")
+    coords = {"Wien": (16, 48, 17, 48.5)}  # Koordinaten Wiens
+    try:
+        with open("wien.pickle", "rb") as file:
+            wien_network = pickle.load(file)
+
+    except FileNotFoundError as msg:
+        print(msg)
+        print("File not found - Starting download")
+        wien_network: Curvy = curvy.Curvy(*coords["Wien"],
+                                          desired_railway_types=["tram"],
+                                          download=True)  # Liest die Tramstrecken Wiens aus
+        wien_network.save("wien.pickle")
+
     line_draw = wien_network.railway_lines[0]
     #plt_line(line_draw)
     #plt_curvature(line_draw)

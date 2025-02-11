@@ -8,6 +8,8 @@ import warnings
 from itertools import chain
 from typing import List, Union
 
+import pickle
+
 import networkx as nx
 import numpy as np
 import overpy
@@ -24,8 +26,15 @@ logger = logging.getLogger(__name__)
 class Curvy:
     supported_railway_types = ["rail", "tram", "subway", "light_rail"]
 
-    def __init__(self, lon_sw: float, lat_sw: float, lon_ne: float, lat_ne: float,
-                 desired_railway_types: Union[List, str] = None, download: bool = True, recurse: str = ">"):
+    def __init__(self,
+                 lon_sw: float,
+                 lat_sw: float,
+                 lon_ne: float,
+                 lat_ne: float,
+                 desired_railway_types: Union[List, str] = None,
+                 download: bool = True,
+                 path_to_file = None,
+                 recurse: str = ">"):
 
         if None in [lon_sw, lat_sw, lon_ne, lat_ne]:
             raise ValueError("One or more lat/lon values is None")
@@ -88,6 +97,9 @@ class Curvy:
                 edges = [(n1.id, n2.id, self.geod.inv(float(n1.lon), float(n1.lat), float(n2.lon), float(n2.lat))[2])
                          for n1, n2 in zip(w.nodes, w.nodes[1:])]
                 self.G.add_weighted_edges_from(edges, weight="d", way_id=w.id)
+
+        if path_to_file:
+            self.load(path_to_file)
 
         logger.info("Initialized region: %f, %f (SW), %f, %f (NE)" % (self.lon_sw,
                                                                       self.lat_sw,
@@ -269,6 +281,12 @@ class Curvy:
             list
         """
         return [line for line in self.railway_lines if re.search(r'\b{0}\b'.format(name), line.name)]
+
+    def save(self, path:str):
+
+        with open(path, 'wb') as file:
+            pickle.dump(self, file)
+
 
     @property
     def lon_sw(self):
