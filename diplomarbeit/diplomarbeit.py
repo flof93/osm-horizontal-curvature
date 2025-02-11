@@ -1,6 +1,7 @@
 import curvy
 from matplotlib import pyplot as plt
 import scipy
+import numpy as np
 
 from curvy import Curvy
 
@@ -13,7 +14,7 @@ coords={"Wien":(16, 48, 17, 48.5)} # Koordinaten Wiens
 #     lower, upper = line.get_error_bounds()
 #
 
-def plt_curvature(line, error_bounds = False, filter_savgol = False, savgol_win_l = 51, savgol_poly_o = 3):
+def plt_curvature(line, plt_radius = False ,error_bounds = False, filter_savgol = False, savgol_win_l = 51, savgol_poly_o = 3):
 
     fig, ax = plt.subplots(1, 1)
 
@@ -21,12 +22,16 @@ def plt_curvature(line, error_bounds = False, filter_savgol = False, savgol_win_
     ax.set_ylabel("Curvature c [m]")
 
     ax.plot(line.s, line.c)
-    if error_bounds:
+
+    if plt_radius: # Zeigt Radius im Graph an (Hinterfragenswert, siehe Bettinger et.al.)
+        ax.plot(line.s, np.divide(1,line.c))
+
+    if error_bounds: # Zeigt Fehlerbereich nach Bettinger et.al. an
         lower, upper = line.get_error_bounds()
         ax.plot(line.s, lower)
         ax.plot(line.s, upper)
 
-    if filter_savgol:
+    if filter_savgol: # legt Savitzky-Golay filter über Krümmung
         sav_gol = scipy.signal.savgol_filter(line.c, savgol_win_l, savgol_poly_o)
         ax.plot(line.s, sav_gol)
 
@@ -66,11 +71,11 @@ def calc_dist(line):
         if i == 0:
             dist.append(0)
         else:
-            dist.append(line.s[i]-line.s[i-1])
+            dist.append(line.s[i]-line.s[i-1]) # Error: i is np.float64 not list
 
 
 if __name__ == "__main__":
-    wien_network = curvy.Curvy(*coords["Wien"],
+    wien_network: Curvy = curvy.Curvy(*coords["Wien"],
                         desired_railway_types=["tram"],
                         download=True)  # Liest die Tramstrecken Wiens aus
     print("Download finished")
@@ -78,6 +83,6 @@ if __name__ == "__main__":
     #plt_line(line_draw)
     #plt_curvature(line_draw)
     #plt_line_curvature(line_draw)
-    plt_network(wien_network)
+    #plt_network(wien_network)
 
 
