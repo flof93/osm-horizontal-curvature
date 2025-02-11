@@ -98,11 +98,12 @@ if __name__ == "__main__":
               "Graz": (15, 46.9, 15.6, 47.2)}
 
     netzwerke = load_data(coords)
-    wien_network = netzwerke["Wien"]
-    line_draw = wien_network.railway_lines[0]
-    #plt_line(line_draw)
-    #plt_curvature(line_draw)
-    #plt_line_curvature(line_draw)
-    #plt_network(wien_network)
+    for i in netzwerke:
+        network = netzwerke[i]
+        line_draw = network.railway_lines[0]
+        #plt_line(line_draw)
+        #plt_curvature(line_draw)
+        #plt_line_curvature(line_draw)
+        plt_network(network)
 
 

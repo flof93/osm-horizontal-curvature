@@ -141,4 +141,5 @@ dmypy.json
 cython_debug/
 
 # Pickle - Files
+Pickles/
 *.pickle
