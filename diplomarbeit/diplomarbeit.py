@@ -46,10 +46,12 @@ def plt_line(line):
     plt.show()
 
 def plt_line_curvature(line):
-    fig, ax = plt.subplots(2, 1)
+    fig, ax = plt.subplots(3, 1)
     ax[0].plot(line.x, line.y, color=line.color)
     ax[1].plot(line.s, line.c)
-    ax.grid()
+    ax[2].plot(line.s, line.dgamma)
+
+    #ax.grid()
 
 def plt_network(network : Curvy):
     fig, ax = plt.subplots()
@@ -79,10 +81,9 @@ def load_data(coordinates: dict):
                 new_network = pickle.load(file)
 
         except FileNotFoundError as msg:
-            print(msg)
             print(location + ".pickle not found - Starting download")
             new_network: Curvy = curvy.Curvy(*coordinates[location],
-                                             desired_railway_types=["tram"],
+                                             desired_railway_types=["tram","light_rail"],
                                              download=True)  # Liest die Tramstrecken aus
             new_network.save("Pickles/" + location + ".pickle")
 
@@ -94,8 +95,11 @@ def load_data(coordinates: dict):
 
 
 if __name__ == "__main__":
-    coords = {"Wien": (16, 48, 17, 48.5), # Koordinaten Wiens
-              "Graz": (15, 46.9, 15.6, 47.2)}
+    coords = {}
+    coords["Wien"]= (16, 48, 17, 48.5) #, # Koordinaten Wiens
+    # coords["Graz"]= (15, 46.9, 15.6, 47.2)
+    # coords["Innsbruck"]= (11.25, 47.2, 11.5, 47.4)
+    # coords["Linz"]= (14, 48, 14.5, 48.5)
 
     netzwerke = load_data(coords)
     for i in netzwerke:
@@ -103,7 +107,10 @@ if __name__ == "__main__":
         line_draw = network.railway_lines[0]
         #plt_line(line_draw)
         #plt_curvature(line_draw)
-        #plt_line_curvature(line_draw)
-        plt_network(network)
+        plt_line_curvature(line_draw)
+        #plt_network(network)
+        for j in network.railway_lines:
+            curv=max(j.gamma)/(max(j.s)/1000)
+            print(str(j) + " Kurvigkeit: " + str(curv) + " gon/km")
 
 

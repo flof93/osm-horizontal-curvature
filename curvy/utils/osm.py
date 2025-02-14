@@ -8,6 +8,8 @@ import overpy
 import pyproj
 
 from geopy.distance import geodesic
+
+
 from curvy.utils import generate_random_color, poly_quadratic
 
 logger = logging.getLogger(__name__)
@@ -41,6 +43,7 @@ class OSMRelation:
         self.x, self.y = self.convert_lon_lat_to_xy(self.lon, self.lat)
         self.s, self.ds = self.compute_distance_from_lon_lat(self.lon, self.lat)
         self.c = self.compute_curvature(self.x, self.y)
+        self.gamma, self.dgamma = self.compute_angles_from_xy(self.x, self.y)
 
         self.offset = 0
         self.color = color
@@ -173,6 +176,75 @@ class OSMRelation:
             return c
         else:
             return []
+
+    @staticmethod
+    def compute_angles_from_xy(x: List[float], y: List[float]) -> Tuple[list, list]:
+        """ Calculates the change of angle between a set of coordinates
+
+                Parameters
+                ----------
+                x
+                y
+
+                Returns
+                -------
+                Tuple
+                List containing total angle, list of pairwise delta-angles
+                """
+        angle_units = {"gon":400, "degree":360, "radians":2*math.pi}
+        desired_unit = "gon" # Select desired unit
+
+        if len(x) != len(y):
+            raise ValueError("x and y have to be same length")
+
+        if len(x) > 0 and len(y) > 0:
+            gamma = [0.0]
+            dgamma = [0.0]
+
+            for i in range(len(x)):
+                if not (i == 0 or i == len(x) - 1):
+                    # Get three neighbored points
+                    x1 = x[i - 1]
+                    y1 = y[i - 1]
+
+                    x2 = x[i]
+                    y2 = y[i]
+
+                    x3 = x[i + 1]
+                    y3 = y[i + 1]
+
+                    # # Get distance between each of the points
+                    # s_a = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) # 1-2
+                    # s_b = math.sqrt((x2 - x3) ** 2 + (y2 - y3) ** 2) # 2-3
+
+                    # Get angles between x-axis and connections 1-2 (a) or 2-3 (b) respectively:
+                    try:
+                        gamma_a = math.atan((y2-y1)/(x2-x1)) * (angle_units[desired_unit]/2)/math.pi
+                    except ZeroDivisionError:
+                        gamma_a = math.atan(np.infty) * (angle_units[desired_unit]/2) / math.pi
+
+                    try:
+                        gamma_b = math.atan((y3 - y2) / (x3 - x2)) * (angle_units[desired_unit]/2) / math.pi
+                    except ZeroDivisionError:
+                        gamma_b = math.atan(np.infty) * (angle_units[desired_unit]/2) / math.pi
+
+                    # Get delta-angle between 1-2 and 2-3
+                    res = gamma_b - gamma_a
+                    if res > (angle_units[desired_unit]/4):
+                        res -= (angle_units[desired_unit]/2)
+                    elif res < -(angle_units[desired_unit]/4):
+                        res += (angle_units[desired_unit]/2)
+
+                    dgamma.append(res)
+
+                # Integrate dgamma
+            gamma.extend(np.cumsum(np.abs(dgamma)))
+            dgamma.append(0)
+            return gamma, dgamma
+        else:
+            return [],[]
+
+
 
     @staticmethod
     def compute_distance_from_xy(x: List[float], y: List[float]) -> Tuple[list, list]:
