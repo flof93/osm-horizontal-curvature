@@ -5,7 +5,11 @@ import numpy as np
 import pickle
 import pandas as pd
 
+import logging.config
+
 from curvy import Curvy
+
+logger = logging.getLogger(__name__)
 
 # for i in curvy.railway_lines:
 #     line = i
@@ -55,7 +59,7 @@ def plt_line_curvature(line):
     ax[0].set_xlabel("x-Coordinate [m]")
     ax[0].set_ylabel("y-Coordinate [m]")
     #ax[1].set_xlabel("Distances s [m]")
-    ax[1].set_ylabel("Curvature c [m]")
+    ax[1].set_ylabel("Curvature c [1/m]")
     ax[2].set_xlabel("Distances s [m]")
     ax[2].set_ylabel("Change of Angle [gon]")
 
@@ -93,8 +97,8 @@ def load_data(coordinates: dict):
         except FileNotFoundError as msg:
             print(location + ".pickle not found - Starting download")
             new_network: Curvy = curvy.Curvy(*coordinates[location],
-                                             desired_railway_types=["tram"],#,
-                                                                    #"light_rail"],
+                                             desired_railway_types=["tram",
+                                                                    "light_rail"],
                                              download=True)  # Liest die Tramstrecken aus
             new_network.save("Pickles/" + location + ".pickle")
 
@@ -107,13 +111,17 @@ def load_data(coordinates: dict):
 
 if __name__ == "__main__":
     coords = {}
-    coords["Wien"]= (16, 48, 17, 48.5) #, # Koordinaten Wiens
-    coords["Graz"]= (15, 46.9, 15.6, 47.2)
-    coords["Innsbruck"]= (11.25, 47.2, 11.5, 47.4)
-    coords["Linz"]= (14, 48, 14.5, 48.5)
-    coords["Berlin"] = (12.7, 52.2, 14.1, 52.9)
-    coords["Gmunden"] = (13.77, 47.90, 14, 48)
-    coords["Prag"] = ()
+    # coords["Wien"]= (16, 48, 17, 48.5) #, # Koordinaten Wiens
+    # coords["Graz"]= (15, 46.9, 15.6, 47.2)
+    # coords["Innsbruck"]= (11.25, 47.2, 11.5, 47.4)
+    # coords["Linz"]= (14, 48, 14.5, 48.5)
+    # coords["Berlin"] = (12.7, 52.2, 14.1, 52.9)
+    # coords["Gmunden"] = (13.77, 47.90, 14, 48)
+    # coords["Prag"] = (14, 49.5, 15, 50.5)
+    # coords["Brno"] = (16.4, 49.05, 16.8, 49.35)
+    coords["Budapest"] = (18.8, 47.30, 19.40, 47.70)
+    # coords["Mailand"] = (9.0, 45.30, 9.35, 45.60)
+    # coords["San Francisco"] = (-123.2,37.5,-122.25,38)
 
     netzwerke = load_data(coords)
     stadt, linie, richtung, dist, curvature = [], [], [], [], []
