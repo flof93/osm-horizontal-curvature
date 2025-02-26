@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 import scipy
 import numpy as np
 import pickle
+import pandas as pd
 
 from curvy import Curvy
 
@@ -50,14 +51,23 @@ def plt_line_curvature(line):
     ax[0].plot(line.x, line.y, color=line.color)
     ax[1].plot(line.s, line.c)
     ax[2].plot(line.s, line.dgamma)
+    fig.suptitle(line.name)
+    ax[0].set_xlabel("x-Coordinate [m]")
+    ax[0].set_ylabel("y-Coordinate [m]")
+    #ax[1].set_xlabel("Distances s [m]")
+    ax[1].set_ylabel("Curvature c [m]")
+    ax[2].set_xlabel("Distances s [m]")
+    ax[2].set_ylabel("Change of Angle [gon]")
 
     #ax.grid()
 
-def plt_network(network : Curvy):
+def plt_network(network : Curvy, city: str = ""):
     fig, ax = plt.subplots()
     for line in network.railway_lines:
         ax.plot(line.lon,line.lat,color=line.color)
     ax.grid()
+    if city:
+        fig.suptitle(city)
     #ax.set_aspect('equal', adjustable='box')
     plt.show()
 
@@ -83,7 +93,8 @@ def load_data(coordinates: dict):
         except FileNotFoundError as msg:
             print(location + ".pickle not found - Starting download")
             new_network: Curvy = curvy.Curvy(*coordinates[location],
-                                             desired_railway_types=["tram","light_rail"],
+                                             desired_railway_types=["tram"],#,
+                                                                    #"light_rail"],
                                              download=True)  # Liest die Tramstrecken aus
             new_network.save("Pickles/" + location + ".pickle")
 
@@ -97,20 +108,41 @@ def load_data(coordinates: dict):
 if __name__ == "__main__":
     coords = {}
     coords["Wien"]= (16, 48, 17, 48.5) #, # Koordinaten Wiens
-    # coords["Graz"]= (15, 46.9, 15.6, 47.2)
-    # coords["Innsbruck"]= (11.25, 47.2, 11.5, 47.4)
-    # coords["Linz"]= (14, 48, 14.5, 48.5)
+    coords["Graz"]= (15, 46.9, 15.6, 47.2)
+    coords["Innsbruck"]= (11.25, 47.2, 11.5, 47.4)
+    coords["Linz"]= (14, 48, 14.5, 48.5)
+    coords["Berlin"] = (12.7, 52.2, 14.1, 52.9)
+    coords["Gmunden"] = (13.77, 47.90, 14, 48)
+    coords["Prag"] = ()
 
     netzwerke = load_data(coords)
+    stadt, linie, richtung, dist, curvature = [], [], [], [], []
     for i in netzwerke:
         network = netzwerke[i]
-        line_draw = network.railway_lines[0]
+        #line_draw = network.railway_lines[0]
         #plt_line(line_draw)
         #plt_curvature(line_draw)
-        plt_line_curvature(line_draw)
-        #plt_network(network)
+        #plt_line_curvature(line_draw)
+        plt_network(network, city=i)
+        #fig, ax = plt.subplots(10, 10)
         for j in network.railway_lines:
             curv=max(j.gamma)/(max(j.s)/1000)
-            print(str(j) + " Kurvigkeit: " + str(curv) + " gon/km")
+            #print(str(j) + " Kurvigkeit: " + str(curv) + " gon/km")
+            #plt_line_curvature(j)
+            #a=j[0]//10
+            #b=j[0]%10
+            #ax[a,b].plot(network.railway_lines[j[0]].s, network.railway_lines[j[0]].dgamma)
+            stadt.append(i)
+            linie.append(j.ref)
+            richtung.append(str(j))
+            dist.append(max(j.s)/1000)
+            curvature.append(curv)
+
+        plt.show()
+
+    d={"Stadt":stadt, "Linie":linie, "Richtung":richtung, "Distanz":dist, "Kurvigkeit":curvature}
+    df=pd.DataFrame(data=d)
+    pt = pd.pivot_table(data=df, values=["Kurvigkeit", "Distanz"], index="Stadt", aggfunc='mean')
+    print(pt)
 
 
