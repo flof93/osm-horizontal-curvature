@@ -1,3 +1,5 @@
+import csv
+
 import curvy
 from matplotlib import pyplot as plt
 import scipy
@@ -72,6 +74,7 @@ def plt_network(network : Curvy, city: str = ""):
     ax.grid()
     if city:
         fig.suptitle(city)
+        fig.canvas.manager.set_window_title(city)
     #ax.set_aspect('equal', adjustable='box')
     plt.show()
 
@@ -96,9 +99,8 @@ def load_data(coordinates: dict):
 
         except FileNotFoundError as msg:
             print(location + ".pickle not found - Starting download")
-            new_network: Curvy = curvy.Curvy(*coordinates[location],
-                                             desired_railway_types=["tram",
-                                                                    "light_rail"],
+            new_network: Curvy = curvy.Curvy(*coordinates[location]['coords'],
+                                             desired_railway_types = coordinates[location]['modes'],
                                              download=True)  # Liest die Tramstrecken aus
             new_network.save("Pickles/" + location + ".pickle")
 
@@ -108,9 +110,24 @@ def load_data(coordinates: dict):
         print(location + " added, " + str(int(n / len(coordinates) * 100)) + "% done")
     return networks
 
+def load_curvy_input(file_path: str) -> dict:
+    """loads a csv-File with Cities and returns a dictionary"""
+    out_dict = {}
+    with open(file_path, newline='') as csvfile:
+        data = csv.DictReader(csvfile, delimiter=";", quotechar='\'', quoting=csv.QUOTE_NONNUMERIC)
+        for row in data:
+            out_dict[row['Stadt']]={'coords':(row['West'],row['Sued'],row['Ost'],row['Nord']),
+                                    'modes':row['Rail Modes'].split(',')}
+    return out_dict
+
+
+
+
 
 if __name__ == "__main__":
-    coords = {}
+    logging.basicConfig(filename='myapp.log', level=logging.INFO)
+
+    # coords = {}
     # coords["Wien"]= (16, 48, 17, 48.5) #, # Koordinaten Wiens
     # coords["Graz"]= (15, 46.9, 15.6, 47.2)
     # coords["Innsbruck"]= (11.25, 47.2, 11.5, 47.4)
@@ -119,19 +136,21 @@ if __name__ == "__main__":
     # coords["Gmunden"] = (13.77, 47.90, 14, 48)
     # coords["Prag"] = (14, 49.5, 15, 50.5)
     # coords["Brno"] = (16.4, 49.05, 16.8, 49.35)
-    coords["Budapest"] = (18.8, 47.30, 19.40, 47.70)
+    # # coords["Budapest"] = (18.8, 47.30, 19.40, 47.70)
     # coords["Mailand"] = (9.0, 45.30, 9.35, 45.60)
     # coords["San Francisco"] = (-123.2,37.5,-122.25,38)
 
+    coords=load_curvy_input('cities.csv')
+
     netzwerke = load_data(coords)
-    stadt, linie, richtung, dist, curvature = [], [], [], [], []
+    stadt, linie, richtung, dist, curvature, gauge = [], [], [], [], [], []
     for i in netzwerke:
         network = netzwerke[i]
         #line_draw = network.railway_lines[0]
         #plt_line(line_draw)
         #plt_curvature(line_draw)
         #plt_line_curvature(line_draw)
-        plt_network(network, city=i)
+        #plt_network(network, city=i)
         #fig, ax = plt.subplots(10, 10)
         for j in network.railway_lines:
             curv=max(j.gamma)/(max(j.s)/1000)
@@ -145,12 +164,24 @@ if __name__ == "__main__":
             richtung.append(str(j))
             dist.append(max(j.s)/1000)
             curvature.append(curv)
+            try:
+                gauge.append(int(j.ways[0].tags['gauge']))
+            except KeyError:
+                gauge.append(np.nan)
+            #except TypeError: # könnte relevant sein, wenn die Linie im Dreischienengleis startet
+
+
 
         plt.show()
 
-    d={"Stadt":stadt, "Linie":linie, "Richtung":richtung, "Distanz":dist, "Kurvigkeit":curvature}
+    d={"Stadt":stadt, "Linie":linie, "Richtung":richtung, "Distanz":dist, "Kurvigkeit":curvature, 'Spurweite':gauge}
     df=pd.DataFrame(data=d)
-    pt = pd.pivot_table(data=df, values=["Kurvigkeit", "Distanz"], index="Stadt", aggfunc='mean')
-    print(pt)
+    pt_cities = pd.pivot_table(data=df,
+                               values=["Kurvigkeit", "Distanz"],
+                               index=["Stadt",'Spurweite'],
+                               aggfunc={'Kurvigkeit':'mean', 'Distanz':('sum','mean')})
+    pt_gauge = pd.pivot_table(data=df, values=["Kurvigkeit", "Distanz"], index="Spurweite", aggfunc='mean')
+    print(pt_cities)
+    print(pt_gauge)
 
 
