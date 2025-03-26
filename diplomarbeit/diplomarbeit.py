@@ -1,15 +1,19 @@
 import csv
 
+import pandas
+
 import curvy
 from matplotlib import pyplot as plt
 import scipy
 import numpy as np
 import pickle
 import pandas as pd
+import seaborn as sns
 
 import logging.config
 
 from curvy import Curvy
+import utils
 
 logger = logging.getLogger(__name__)
 
@@ -89,20 +93,28 @@ def plt_network(network : Curvy, city: str = ""):
 #         else:
 #             dist.append(line.s[i]-line.s[i-1]) # Error: i is np.float64 not list
 
-def load_data(coordinates: dict):
+def load_data(coordinates: dict, force_download: bool = False):
     networks = {}
     n = 0
     for location in coordinates:
+        download = force_download
         try:
             with open("Pickles/" + location + ".pickle", "rb") as file:
                 new_network = pickle.load(file)
+                logger.info("Loaded City %s from disk" % location)
 
-        except FileNotFoundError as msg:
-            print(location + ".pickle not found - Starting download")
+        except FileNotFoundError:
+            print("%s .pickle not found" % location)
+            download = True
+
+
+        if download:
+            print("Starting download of %s" % location)
             new_network: Curvy = curvy.Curvy(*coordinates[location]['coords'],
                                              desired_railway_types = coordinates[location]['modes'],
                                              download=True)  # Liest die Tramstrecken aus
             new_network.save("Pickles/" + location + ".pickle")
+            logger.info("Saved %s as Pickles/%s.pickle" % (location, location))
 
         networks[location] = new_network
         n += 1
@@ -110,78 +122,150 @@ def load_data(coordinates: dict):
         print(location + " added, " + str(int(n / len(coordinates) * 100)) + "% done")
     return networks
 
-def load_curvy_input(file_path: str) -> dict:
+def load_csv_input(file_path: str) -> dict:
     """loads a csv-File with Cities and returns a dictionary"""
     out_dict = {}
     with open(file_path, newline='') as csvfile:
         data = csv.DictReader(csvfile, delimiter=";", quotechar='\'', quoting=csv.QUOTE_NONNUMERIC)
         for row in data:
-            out_dict[row['Stadt']]={'coords':(row['West'],row['Sued'],row['Ost'],row['Nord']),
-                                    'modes':row['Rail Modes'].split(',')}
+
+            modes = row['RailModes'].split(',')
+            if modes == ['']:
+                modes = ['tram', 'light_rail']
+
+            if row['West'] and row['Sued'] and row['Ost'] and row['Nord']:
+                out_dict[row['Stadt']]={'coords':(row['West'],row['Sued'],row['Ost'],row['Nord']),
+                                    'modes':modes}
+            else:
+                bbox = utils.get_bounding_box(row['Stadt'])
+                if bbox:
+                    out_dict[row['Stadt']] = {'coords': (bbox[2], bbox[0], bbox[3], bbox[1]),
+                                          'modes': modes}
+                else:
+                    logger.warning('No bbox for City %s' % row['Stadt'])
+                    continue
+
+    logger.info("Loaded CSV-File: %s" % file_path)
     return out_dict
 
 
+def main(input: str = 'cities.csv'):
+    coords: dict = load_csv_input(input)
+    #coords = {'Budapest':{'coords':(18.8,47.30,19.40,47.70), 'modes':['tram','light_rail']}} # For testing purposes
 
-
-
-if __name__ == "__main__":
-    logging.basicConfig(filename='myapp.log', level=logging.INFO)
-
-    # coords = {}
-    # coords["Wien"]= (16, 48, 17, 48.5) #, # Koordinaten Wiens
-    # coords["Graz"]= (15, 46.9, 15.6, 47.2)
-    # coords["Innsbruck"]= (11.25, 47.2, 11.5, 47.4)
-    # coords["Linz"]= (14, 48, 14.5, 48.5)
-    # coords["Berlin"] = (12.7, 52.2, 14.1, 52.9)
-    # coords["Gmunden"] = (13.77, 47.90, 14, 48)
-    # coords["Prag"] = (14, 49.5, 15, 50.5)
-    # coords["Brno"] = (16.4, 49.05, 16.8, 49.35)
-    # # coords["Budapest"] = (18.8, 47.30, 19.40, 47.70)
-    # coords["Mailand"] = (9.0, 45.30, 9.35, 45.60)
-    # coords["San Francisco"] = (-123.2,37.5,-122.25,38)
-
-    coords=load_curvy_input('cities.csv')
-
-    netzwerke = load_data(coords)
+    netzwerke = load_data(coords, force_download=False)
     stadt, linie, richtung, dist, curvature, gauge = [], [], [], [], [], []
     for i in netzwerke:
         network = netzwerke[i]
-        #line_draw = network.railway_lines[0]
-        #plt_line(line_draw)
-        #plt_curvature(line_draw)
-        #plt_line_curvature(line_draw)
-        #plt_network(network, city=i)
-        #fig, ax = plt.subplots(10, 10)
+        # line_draw = network.railway_lines[0]
+        # plt_line(line_draw)
+        # plt_curvature(line_draw)
+        # plt_line_curvature(line_draw)
+        # plt_network(network, city=i)
+        # fig, ax = plt.subplots(10, 10)
+        # plt.show()
+
         for j in network.railway_lines:
-            curv=max(j.gamma)/(max(j.s)/1000)
-            #print(str(j) + " Kurvigkeit: " + str(curv) + " gon/km")
-            #plt_line_curvature(j)
-            #a=j[0]//10
-            #b=j[0]%10
-            #ax[a,b].plot(network.railway_lines[j[0]].s, network.railway_lines[j[0]].dgamma)
+            try:
+                curv = max(j.gamma) / (max(j.s) / 1000)
+                curvature.append(curv)
+                dist.append(max(j.s) / 1000)
+            except ValueError:
+                logger.warning("Ignoring %s %s, no values for curvature or change of angle available" % (str(i), str(j)))
+                curvature.append(np.nan)
+                dist.append((np.nan))
+
             stadt.append(i)
-            linie.append(j.ref)
+
+            try:
+                linie.append(j.ref)
+            except AttributeError:
+                linie.append("")
+
             richtung.append(str(j))
-            dist.append(max(j.s)/1000)
-            curvature.append(curv)
+
             try:
                 gauge.append(int(j.ways[0].tags['gauge']))
-            except KeyError:
+            except (KeyError, IndexError):
                 gauge.append(np.nan)
-            #except TypeError: # könnte relevant sein, wenn die Linie im Dreischienengleis startet
+                logger.warning("No Gauge data for line %s available" % str(j))
+
+            # except TypeError: # könnte relevant sein, wenn die Linie im Dreischienengleis startet
 
 
 
-        plt.show()
-
-    d={"Stadt":stadt, "Linie":linie, "Richtung":richtung, "Distanz":dist, "Kurvigkeit":curvature, 'Spurweite':gauge}
-    df=pd.DataFrame(data=d)
+    d = {"Stadt": stadt, "Linie": linie, "Richtung": richtung, "Distanz": dist, "Kurvigkeit": curvature,
+         'Spurweite': gauge}
+    df = pd.DataFrame(data=d)
     pt_cities = pd.pivot_table(data=df,
                                values=["Kurvigkeit", "Distanz"],
-                               index=["Stadt",'Spurweite'],
-                               aggfunc={'Kurvigkeit':'mean', 'Distanz':('sum','mean')})
+                               index=["Stadt", 'Spurweite'],
+                               aggfunc={'Kurvigkeit': 'mean', 'Distanz': ('sum', 'mean')})
     pt_gauge = pd.pivot_table(data=df, values=["Kurvigkeit", "Distanz"], index="Spurweite", aggfunc='mean')
     print(pt_cities)
     print(pt_gauge)
 
+if __name__ == "__main__":
+    logging.basicConfig(filename='myapp.log', level=logging.WARNING)
+    #main()
 
+    coords: dict = load_csv_input("cities.csv")
+    # coords = {'Budapest':{'coords':(18.8,47.30,19.40,47.70), 'modes':['tram','light_rail']}} # For testing purposes
+
+    netzwerke = load_data(coords, force_download=False)
+    stadt, linie, richtung, dist, curvature, gauge = [], [], [], [], [], []
+    for i in netzwerke:
+        network = netzwerke[i]
+        # line_draw = network.railway_lines[0]
+        # plt_line(line_draw)
+        # plt_curvature(line_draw)
+        # plt_line_curvature(line_draw)
+        # plt_network(network, city=i)
+        # fig, ax = plt.subplots(10, 10)
+        # plt.show()
+
+        for j in network.railway_lines:
+            try:
+                curv = max(j.gamma) / (max(j.s) / 1000)
+                curvature.append(curv)
+                dist.append(max(j.s) / 1000)
+            except ValueError:
+                logger.warning(
+                    "Ignoring %s %s, no values for curvature or change of angle available" % (str(i), str(j)))
+                curvature.append(np.nan)
+                dist.append((np.nan))
+
+            stadt.append(i)
+
+            try:
+                linie.append(j.ref)
+            except AttributeError:
+                linie.append("")
+
+            richtung.append(str(j))
+
+            try:
+                gauge.append(int(j.ways[0].tags['gauge']))
+            except (KeyError, IndexError):
+                gauge.append(np.nan)
+                logger.warning("No Gauge data for line %s available" % str(j))
+
+            # except TypeError: # könnte relevant sein, wenn die Linie im Dreischienengleis startet
+
+    d = {"Stadt": stadt, "Linie": linie, "Richtung": richtung, "Distanz": dist, "Kurvigkeit": curvature,
+         'Spurweite': gauge}
+    df = pd.DataFrame(data=d)
+    df.to_feather('Auswertung/data.feather')
+    #
+    # pt_cities = pd.pivot_table(data=df,
+    #                            values=["Kurvigkeit", "Distanz"],
+    #                            index=["Stadt", 'Spurweite'],
+    #                            aggfunc={'Kurvigkeit': 'mean', 'Distanz': ('sum', 'mean')})
+    # pt_gauge = pd.pivot_table(data=df, values=["Kurvigkeit", "Distanz"], index="Spurweite", aggfunc='mean')
+    # print(pt_cities)
+    # print(pt_gauge)
+    #
+    # pandas.read_csv('cities.csv')
+    #
+    # sns.boxplot(data=df, y='Kurvigkeit', x='Spurweite', orient='v')
+    #

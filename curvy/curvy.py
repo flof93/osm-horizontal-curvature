@@ -116,15 +116,18 @@ class Curvy:
                          (._;>;);
                          out body;
                       """
+        # TODO: Bei der erzeugung der Queries an Kombinationen aus railway types denken (for i in railway_types: query.append [...])
+
+
         if railway_type == "rail":  # Railway routes use train instead of rail
             railway_type = "train"
 
-        route_query = """(relation[""" + "route" + """=""" + railway_type + """](""" + str(self.lat_sw) + """,""" \
-                      + str(self.lon_sw) + """,""" + str(self.lat_ne) + """,""" + str(self.lon_ne) + """);
+        route_query = ("""(relation[route=""" + railway_type + """](""" + str(self.lat_sw) + ""","""
+                       + str(self.lon_sw) + """,""" + str(self.lat_ne) + """,""" + str(self.lon_ne) + """);
                         );
                         (._;""" + recurse + """;);
                          out body;
-                      """
+                      """)
 
         return track_query, route_query
 
@@ -139,7 +142,13 @@ class Curvy:
 
         # Download data for all desired railway types
         if internet():
-            for railway_type in tqdm(railway_types):
+
+            # gen = ((x,y) for x in railway_types for y in railway_types)
+            # res =[]
+            # for u,v in gen:
+            #     res.append((u,v))
+
+            for railway_type in tqdm(railway_types): #railway_type
                 # Create Overpass queries and try downloading them
                 logger.info("Querying data for railway type: %s" % railway_type)
                 trk_query, rou_query = self._create_query(railway_type=railway_type, recurse=recurse)
