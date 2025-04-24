@@ -116,7 +116,6 @@ class Curvy:
                          (._;>;);
                          out body;
                       """
-        # TODO: Bei der erzeugung der Queries an Kombinationen aus railway types denken (for i in railway_types: query.append [...])
 
 
         if railway_type == "rail":  # Railway routes use train instead of rail
