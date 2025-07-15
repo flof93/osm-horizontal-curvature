@@ -1,13 +1,8 @@
-from typing import Type
-from urllib.error import HTTPError
-from urllib.request import Request
-
 import numpy as np
 import requests
-from pandas import DataFrame
 
 from curvy.utils import OSMRailwayLine
-from curvy import Curvy
+import curvy
 import pandas as pd
 
 
@@ -78,45 +73,34 @@ def get_heights(lat: list, lon: list) -> list:
 def get_heights_for_line(line: OSMRailwayLine) -> list:
     return get_heights(lat= [float(i) for i in line.lat], lon= [float(i) for i in line.lon])
 
-    # url = 'http://localhost:8080/api/v1/lookup'
-    # list_of_points = []
-    # if len(line.lat) != len(line.lon):
-    #     raise AssertionError('Latitude and Longitude have to be the same length')
-    #
-    # ele = []
-    # if line.lat and line.lon:
-    #     for city in range(len(line.lat)):
-    #         list_of_points.append(
-    #             {'latitude': float(line.lat[city]),
-    #              'longitude': float(line.lon[city])}
-    #         )
-    #
-    #     json = {'locations': list_of_points}
-    #
-    #     answer = requests.post(url= url, json= json)
-    #     if answer.status_code == 200:
-    #         results = answer.json()
-    #         for result in results['results']:
-    #             ele.append(result['elevation'])
-    #     else:
-    #         raise requests.exceptions.HTTPError
-    #
-    # return ele
 
-def generate_df(curvy: Curvy) -> DataFrame:
+def generate_df(curvy: curvy.Curvy) -> pd.DataFrame:
     df_return=pd.DataFrame()
     for line in curvy.railway_lines:
-        d = {'Linie': line.name if hasattr(line, 'name') else '',
-             'Nummer': line.ref if hasattr(line, 'ref') else '',
-             'Distanz': line.s if len(line.s)>0 else [np.NaN],
-             'x': line.x if len(line.x)>0 else [np.NaN],
-             'y': line.y if len(line.y)>0 else [np.NaN],
-             'Latitude': [float(i) for i in line.lat] if len(line.lat)>0 else [np.NaN],
-             'Longitude': [float(i) for i in line.lon] if len(line.lon)>0 else [np.NaN],
-             'd_Kurvigkeit': line.dgamma if len(line.dgamma)>0 else [np.NaN],
-             'Kurvigkeit': line.gamma if len(line.gamma)>0 else [np.NaN],
-             'Krümmung': line.c if len(line.c)>0 else [np.NaN]}
+        d : dict = {
+            'Linie': getattr(line, 'name') if hasattr(line, 'name') else '',
+            'Nummer': getattr(line, 'ref') if hasattr(line, 'ref') else '',
+            'Distanz': line.s if len(line.s)>0 else [np.NaN],
+            'x': line.x if len(line.x)>0 else [np.NaN],
+            'y': line.y if len(line.y)>0 else [np.NaN],
+            'Latitude': [float(i) for i in line.lat] if len(line.lat)>0 else [np.NaN],
+            'Longitude': [float(i) for i in line.lon] if len(line.lon)>0 else [np.NaN],
+            'd_Winkel': line.dgamma if len(line.dgamma)>0 else [np.NaN],
+            'Winkel': line.gamma if len(line.gamma)>0 else [np.NaN],
+            'Krümmung': line.c if len(line.c)>0 else [np.NaN],
+            'Gauge': int(line.ways[0].tags['gauge']) if len(line.ways) > 0 and 'gauge' in line.ways[0].tags and line.ways[0].tags['gauge'].isnumeric() else np.NaN,
+            #'Gauge':
+            'From': getattr(line, 'from') if hasattr(line, 'from') else '',
+            'To': getattr(line, 'to') if hasattr(line, 'to') else ''
+        }
         d['Höhe'] = get_heights(lat= d['Latitude'], lon= d['Longitude'])
         df_line=pd.DataFrame(data=d)
         df_return = pd.concat([df_line, df_return])
     return df_return
+
+def load_gtfs_speeds(path_to_trip_speeds):
+    with open(path_to_trip_speeds, "r") as file:
+        filedata = pd.read_csv(file)
+    df = pd.DataFrame(data = filedata)
+    return df
+

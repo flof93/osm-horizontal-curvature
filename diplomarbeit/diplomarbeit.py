@@ -1,8 +1,6 @@
 import csv
 from tqdm import tqdm
 
-import pandas
-
 import curvy
 from matplotlib import pyplot as plt
 import scipy
@@ -165,37 +163,39 @@ def main(input: str = 'cities.csv'):
         network = netzwerke[city]
         df_linien = da_utils.generate_df(network)
         df_linien.reset_index(inplace=True)
-        df_linien.to_feather('Auswertung/Cities/%s.feather' % city)
+        df_linien.to_feather('Auswertung/Networks/%s.feather' % city)
+
+    return netzwerke
 
 if __name__ == "__main__":
     logging.basicConfig(filename='myapp.log', level=logging.WARNING)
-    #main()
+    netze = main()
 
 
 
     #coords: dict = load_csv_input("cities.csv")
     #coords = {'Budapest':{'coords':(18.8,47.30,19.40,47.70), 'modes':['tram','light_rail']}} # For testing purposes
     #coords = {'Gmunden': {'coords': (13.77,47.90,14,48), 'modes': ['tram', 'light_rail']}}  # For testing purposes
-    bbox = da_utils.get_bounding_box('Portland')
-    coords = {'Portland':{'coords':(bbox[2], bbox[0], bbox[3], bbox[1]), 'modes':['tram', 'light_rail']}}
-
-    print ('Loading Cities')
-    netzwerke = load_data(coords, force_download=True)
-
-    print('Cities added, generating DataFrames and calculating Heights.')
-    #stadt, linie, richtung, dist, curvature_angular, gauge, elevation_max, elevation_min = [], [], [], [], [], [], [], []
-    for city in tqdm(netzwerke):
-        network = netzwerke[city]
-        df_linien = da_utils.generate_df(network)
-        df_linien.reset_index(inplace=True)
-
-        # line_draw = network.railway_lines[0]
-        # plt_line(line_draw)
-        # plt_curvature(line_draw)
-        # plt_line_curvature(line_draw)
-        plt_network(network, city=city)
-        # fig, ax = plt.subplots(10, 10)
-        # plt.show()
+    # bbox = da_utils.get_bounding_box('Portland')
+    # coords = {'Portland':{'coords':(bbox[2]-1, bbox[0]-1, bbox[3], bbox[1]), 'modes':['tram', 'light_rail']}}
+    #
+    # print ('Loading Cities')
+    # netzwerke = load_data(coords, force_download=True)
+    #
+    # print('Cities added, generating DataFrames and calculating Heights.')
+    # #stadt, linie, richtung, dist, curvature_angular, gauge, elevation_max, elevation_min = [], [], [], [], [], [], [], []
+    # for city in tqdm(netzwerke):
+    #     network = netzwerke[city]
+    #     df_linien = da_utils.generate_df(network)
+    #     df_linien.reset_index(inplace=True)
+    #
+    #     # line_draw = network.railway_lines[0]
+    #     # plt_line(line_draw)
+    #     # plt_curvature(line_draw)
+    #     # plt_line_curvature(line_draw)
+    #     plt_network(network, city=city)
+    #     # fig, ax = plt.subplots(10, 10)
+    #     # plt.show()
 
 #    df_linien['Höhe'] = da_utils.get_heights(lat= df_linien['Latitude'].tolist(), lon= df_linien['Longitude'].tolist())
 
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     #
     #     for j in network.railway_lines:
     #         try:
-    #             curv = max(j.gamma) / (max(j.s) / 1000)
+    #             curv = max(j.gamma) / (max(j.s) / 1000) #TODO: Muss in Auswertung korrigiert werden!
     #             curvature_angular.append(curv)
     #             dist.append(max(j.s) / 1000)
     #
