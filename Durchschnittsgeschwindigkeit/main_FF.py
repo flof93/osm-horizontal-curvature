@@ -4,10 +4,8 @@ import os
 from datetime import datetime, timedelta
 import time
 
-from pandas.core.interchange.dataframe_protocol import DataFrame
-
 # Pfad zum GTFS-Datensatz angeben
-path_to_gtfs = "./data/wien/"
+# path_to_gtfs = "./data/wien/"
 
 ## FF: make functions callable
 def calc_speeds(path_to_gtfs):
@@ -55,7 +53,7 @@ def calc_speeds(path_to_gtfs):
         for row in stop_times_reader:
             trip_id = row['trip_id']
             shape_dist_traveled = float(row['shape_dist_traveled'])
-            stop_sequence = int(row['stop_sequence'])
+            #stop_sequence = int(row['stop_sequence'])
             arrival_time_str = row['arrival_time']
 
             # Wenn die Stundenangabe größer als 23 ist, subtrahiere 24 und erhöhe den Tag um 1
@@ -117,42 +115,30 @@ def calc_speeds(path_to_gtfs):
 
 
         # Ein leeres DataFrame erstellen
-        df1 = pd.DataFrame(columns=['route_short_name', 'direction_id', 'first_stop_id', 'last_stop_id','avg_speed'])
+        # df1 = pd.DataFrame(columns=['route_short_name', 'direction_id', 'first_stop_name', 'last_stop_name','avg_speed'])
 
         # Gruppierung nach route_short_name und direction_id durchführen und Durchschnittsgeschwindigkeit berechnen
         print(f"Berechne die Durchschnittsgeschwindigkeiten pro route_short_name und direction_id...")
 
         grouped = df.groupby(['route_short_name', 'direction_id', 'first_stop_id', 'last_stop_id'])
 
+        data_df=[]
+
         for name, group in grouped:
             # Berechne die Durchschnittsgeschwindigkeit für diese Gruppe
             avg_speed = group['trip_speed'].mean()
 
             # Füge die Informationen zu dieser Gruppe (route_short_name, direction_id und Durchschnittsgeschwindigkeit) dem DataFrame hinzu
-            df1 = pd.concat([df1, pd.DataFrame({'route_short_name': [name[0]],
-                                                'direction_id': [name[1]],
-                                                'avg_speed': [avg_speed],
-                                                'first_stop_id':[name[2]],
-                                                'last_stop_id':[name[3]]})],
-                            ignore_index=True)
+            data_dict={'route_short_name': name[0],
+                       'direction_id': name[1],
+                       'avg_speed': avg_speed,
+                       'first_stop_id':name[2],
+                       'last_stop_id':name[3]}
+            first_stop_name = stops[data_dict['first_stop_id']]
+            last_stop_name = stops[data_dict['last_stop_id']]
+            data_df.append((data_dict['route_short_name'],data_dict['direction_id'],data_dict['avg_speed'],first_stop_name, last_stop_name))
 
-        # FF: Suche Ausgangs- und Endstation TODO: Start- und Zielstation oberhalb implementieren!
-        # print(f"Ermittle Start- und Endstation...")
-        #
-        # data_df = []
-        # for (first_stop_id, last_stop_id) in df1['first_stop_id']['last_stop_id']:
-        #     #first_stop_id = df1[df1['trip_id'] == trip_id]['first_stop_id'].item()
-        #     first_stop_name = stops[first_stop_id]
-        #
-        #     #last_stop_id = df1[df1['trip_id'] == trip_id]['last_stop_id'].item()
-        #     last_stop_name = stops[last_stop_id]
-        #
-        #     data_df.append(
-        #         {'trip_id': trip_id, 'first_stop_name': first_stop_name, 'last_stop_name': last_stop_name})
-        #
-        # first_last_stop_df = pd.DataFrame(data=data_df)
-        # df = pd.merge(first_last_stop_df.drop_duplicates(), df1, on='trip_id')
-
+        df1 = pd.DataFrame(data=data_df, columns=['route_short_name','direction_id', 'trip_speed', 'first_stop_name', 'last_stop_name'])
 
         # Sortieren nach route_short_name
         ## FF Sortierung verbessert
@@ -160,7 +146,7 @@ def calc_speeds(path_to_gtfs):
         #str_df = df1[pd.to_numeric(df1['route_short_name'], errors='coerce').isnull()]  # wählt nicht-numerische Werte aus
         df1_sorted = df1.sort_values(
             by=['route_short_name', 'direction_id']).reset_index(
-            drop=True)  # sortiert numerische Werte TODO: Überprüfen ob Sortierung richtig funktioniert!
+            drop=True)  # sortiert numerische Werte
         #df1_sorted.drop(columns=['trip_id'], inplace=True)
 
         #sorted_num_df = num_df.astype(float).sort_values(by=['route_short_name', 'direction_id']).reset_index(drop=True)  # sortiert numerische Werte
@@ -183,7 +169,7 @@ def calc_speeds(path_to_gtfs):
 ### FF: Add function calls:
 if __name__ == "__main__":
     start = time.time()
-    path_to_gtfs = "./data/muenchen/"
-    calc_speeds(path_to_gtfs)
+    gtfs_path = "./data/wien/"
+    calc_speeds(path_to_gtfs= gtfs_path)
     stop = time.time()
     print(f"Took: %s to run" %(str(stop-start)))
