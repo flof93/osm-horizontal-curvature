@@ -164,7 +164,7 @@ def calc_speeds(path_to_gtfs):
         #df1_sorted.to_latex(path_to_gtfs + 'results/trip_speeds_route_direction' + str(datetime.now().strftime('_%d_%m_%Y')) + '.tex', index=False)
 
         ### FF: Ergänzung um Export in csv, zur weiteren Verwendung.
-        df1_sorted.to_csv(path_to_gtfs + 'results/trip_speeds_route_direction' + str(datetime.now().strftime('_%d_%m_%Y')) + '.csv', index=False)
+        df1_sorted.to_csv(path_to_gtfs + 'results/trip_speeds_route_direction' + str(datetime.now().strftime('_%Y_%m_%d')) + '.csv', index=False)
 
 ### FF: Add function calls:
 if __name__ == "__main__":

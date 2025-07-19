@@ -6,7 +6,7 @@ import curvy
 import pandas as pd
 
 
-def get_bounding_box(query):
+def get_bounding_box(query): #TODO: evtl umbauen auf gdf aus osmnx?! Weil weniger gefahr Strecken abzuschneiden???
     # Nominatim-Url
     url = "https://nominatim.openstreetmap.org/search"
     headers = {'User-agent': 'Mozilla/5.0'}
@@ -103,4 +103,8 @@ def load_gtfs_speeds(path_to_trip_speeds):
         filedata = pd.read_csv(file)
     df = pd.DataFrame(data = filedata)
     return df
+
+def get_lines_in_city():
+    pass
+    #TODO Nur Linien aus DF Auswerfen
 

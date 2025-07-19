@@ -11,7 +11,6 @@ import seaborn as sns
 
 import logging.config
 
-from curvy import Curvy
 import da_utils
 
 logger = logging.getLogger(__name__)
@@ -73,7 +72,7 @@ def plt_line_curvature(line):
 
     #ax.grid()
 
-def plt_network(network : Curvy, city: str = ""):
+def plt_network(network : curvy.Curvy, city: str = ""):
     fig, ax = plt.subplots()
     for line in network.railway_lines:
         ax.plot(line.lon,line.lat,color=line.color)
@@ -112,7 +111,7 @@ def load_data(coordinates: dict, force_download: bool = False):
 
         if download:
             print("Starting download of %s" % location)
-            new_network: Curvy = curvy.Curvy(*coordinates[location]['coords'],
+            new_network: curvy.Curvy = curvy.Curvy(*coordinates[location]['coords'],
                                              desired_railway_types = coordinates[location]['modes'],
                                              download=True, recurse='>')  # Liest die Tramstrecken aus
             new_network.save("Pickles/" + location + ".pickle")
@@ -163,7 +162,8 @@ def main(input: str = 'cities.csv'):
         network = netzwerke[city]
         df_linien = da_utils.generate_df(network)
         df_linien.reset_index(inplace=True)
-        df_linien.to_feather('Auswertung/Networks/%s.feather' % city)
+        #df_linien.to_feather('./Auswertung/Networks/%s.feather' % city)
+        df_linien.to_csv('./Auswertung/Networks/%s.csv' % city)
 
     return netzwerke
 
