@@ -144,3 +144,4 @@ cython_debug/
 Pickles/
 *.pickle
 /Durchschnittsgeschwindigkeit/data/
+/data
