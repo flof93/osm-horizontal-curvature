@@ -1,2 +1,3 @@
 from diplomarbeit import da_utils
 from diplomarbeit import map_osm_gtfs
+from diplomarbeit import add_speeds_to_osm
