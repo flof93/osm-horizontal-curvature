@@ -6,8 +6,11 @@ from matplotlib import pyplot as plt
 import scipy
 import numpy as np
 import pickle
-import pandas as pd
-import seaborn as sns
+
+import os
+
+# import pandas as pd
+# import seaborn as sns
 
 import logging.config
 
@@ -94,13 +97,23 @@ def plt_network(network : curvy.Curvy, city: str = ""):
 #         else:
 #             dist.append(line.s[city]-line.s[city-1]) # Error: city is np.float64 not list
 
-def load_data(coordinates: dict, force_download: bool = False):
+def load_data(coordinates: dict, force_download: bool = False, data_path: str = './data/'):
     networks = {}
 
     for location in tqdm(coordinates):
+        if not os.path.exists(data_path + location):
+            os.makedirs(data_path + location + '/osm')
+            os.makedirs(data_path + location + '/timetable')
+
+        elif not os.path.exists(data_path + location + '/osm'):
+            os.makedirs(data_path + location + '/osm')
+
+        elif not os.path.exists(data_path + location + '/timetable'):
+            os.makedirs(data_path + location + '/timetable')
+
         download = force_download
         try:
-            with open("Pickles/" + location + ".pickle", "rb") as file:
+            with open(data_path + location + "/osm/raw_data.pickle", "rb") as file:
                 new_network = pickle.load(file)
                 logger.info("Loaded City %s from disk" % location)
 
@@ -114,8 +127,8 @@ def load_data(coordinates: dict, force_download: bool = False):
             new_network: curvy.Curvy = curvy.Curvy(*coordinates[location]['coords'],
                                              desired_railway_types = coordinates[location]['modes'],
                                              download=True, recurse='>')  # Liest die Tramstrecken aus
-            new_network.save("Pickles/" + location + ".pickle")
-            logger.info("Saved %s as Pickles/%s.pickle" % (location, location))
+            new_network.save(data_path + location + "/osm/raw_data.pickle")
+            logger.info("Saved %s as Pickle" % location)
 
         networks[location] = new_network
 
@@ -125,7 +138,7 @@ def load_csv_input(file_path: str) -> dict:
     """loads a csv-File with Cities and returns a dictionary"""
     out_dict = {}
     with open(file_path, newline='') as csvfile:
-        data = csv.DictReader(csvfile, delimiter=";", quotechar='\'', quoting=csv.QUOTE_NONNUMERIC)
+        data = csv.DictReader(csvfile, delimiter=";")#, quotechar='\'', quoting=csv.QUOTE_NONNUMERIC)
         for row in data:
 
             if row['RailModes'] is None:
@@ -137,13 +150,13 @@ def load_csv_input(file_path: str) -> dict:
                 modes = ['tram', 'light_rail']
 
             if row['West'] and row['Sued'] and row['Ost'] and row['Nord']:
-                out_dict[row['Stadt']]={'coords':(row['West'],row['Sued'],row['Ost'],row['Nord']),
-                                    'modes':modes}
+                out_dict[row['machine_readable']]={'coords':(float(row['West']),float(row['Sued']),float(row['Ost']),float(row['Nord'])),
+                                    'modes':modes, 'name':row['Stadt']}
             else:
-                bbox = da_utils.get_bounding_box(row['Stadt'])
+                bbox = da_utils.get_bounding_box(row['machine_readable'])
                 if bbox:
-                    out_dict[row['Stadt']] = {'coords': (bbox[2], bbox[0], bbox[3], bbox[1]),
-                                          'modes': modes}
+                    out_dict[row['machine_readable']] = {'coords': (bbox[2], bbox[0], bbox[3], bbox[1]),
+                                          'modes': modes, 'name':row['Stadt']}
                 else:
                     logger.warning('No bbox for City %s' % row['Stadt'])
                     continue
@@ -152,10 +165,11 @@ def load_csv_input(file_path: str) -> dict:
     return out_dict
 
 
-def main(input: str = 'cities.csv'):
-    coords: dict = load_csv_input(input)
+def main(data_path: str = './data/'):
+    cityfile = data_path + 'cities.csv'
+    coords: dict = load_csv_input(file_path= cityfile)
     print('Loading Cities\n')
-    netzwerke = load_data(coords, force_download=False)
+    netzwerke = load_data(coordinates= coords, force_download=False, data_path = data_path)
 
     print('\nCities added, generating DataFrames and calculating Heights.\n')
     for city in tqdm(netzwerke):
@@ -163,7 +177,7 @@ def main(input: str = 'cities.csv'):
         df_linien = da_utils.generate_df(network)
         df_linien.reset_index(inplace=True)
         #df_linien.to_feather('./Auswertung/Networks/%s.feather' % city)
-        df_linien.to_csv('./Auswertung/Networks/%s.csv' % city)
+        df_linien.to_csv('%s%s/osm/processed.csv' % (data_path, city))
 
     return netzwerke
 

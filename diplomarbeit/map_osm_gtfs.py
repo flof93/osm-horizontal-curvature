@@ -2,7 +2,6 @@ from time import sleep
 from typing import Tuple
 
 import pandas as pd
-import curvy
 import difflib
 
 def match_station(osm: str, gtfs: list) -> Tuple[str, str]:
