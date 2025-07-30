@@ -41,10 +41,11 @@ def calc_speeds(path_to_gtfs):
     stop_times_tram = pd.merge(stop_times_tram, trips_tram[['trip_id', 'route_short_name', 'direction_id']], on='trip_id')
 
     # Erstelle neue bereinigte stop_times_tram.txt Datei
-    stop_times_tram.to_csv('stop_times_tram.txt',index=False)
+    stop_times_tram.to_csv(path_or_buf=path_to_gtfs+'stop_times_tram.txt',index=False)
 
     # Mit der neuen GTFS stop_times_tram.txt-Datei:
-    with open('../Durchschnittsgeschwindigkeit/stop_times_tram.txt', 'r', encoding='utf8') as stop_times_file:
+    ## FF: Speichern der stop_times_tram-Datei bei den GTFS-Daten, nicht im wdir
+    with open(path_to_gtfs+'stop_times_tram.txt', 'r', encoding='utf8') as stop_times_file:
         stop_times_reader = csv.DictReader(stop_times_file)
 
         # Ein leeres Dictionary für die Berechnung der Durchschnittsgeschwindigkeiten erstellen
@@ -102,12 +103,15 @@ def calc_speeds(path_to_gtfs):
             # Endstation ermitteln
             last_stop_id = data[-1][2]
 
-            data_df.append([trip_id, trip_speed, first_stop_id, last_stop_id])
+            first_stop_name = stops[first_stop_id]
+            last_stop_name = stops[last_stop_id]
+
+            data_df.append([trip_id, trip_speed, first_stop_id, last_stop_id, first_stop_name, last_stop_name])
 
             # Füge trip_id und Durchschnittsgeschwindigkeit dem DataFrame hinzu
             # df = pd.concat([df, pd.DataFrame({'trip_id': [trip_id], 'trip_speed': [trip_speed]})], ignore_index=True)#, 'first_stop_id': [first_stop_id], 'last_stop_id': [last_stop_id]})], ignore_index=True)
 
-        df = pd.DataFrame(data=data_df, columns=['trip_id', 'trip_speed', 'first_stop_id', 'last_stop_id'])
+        df = pd.DataFrame(data=data_df, columns=['trip_id', 'trip_speed', 'first_stop_id', 'last_stop_id', 'first_stop_name', 'last_stop_name'])
 
 
         # Füge die Spalte 'route_short_name' zum DataFrame hinzu
@@ -120,25 +124,27 @@ def calc_speeds(path_to_gtfs):
         # Gruppierung nach route_short_name und direction_id durchführen und Durchschnittsgeschwindigkeit berechnen
         print(f"Berechne die Durchschnittsgeschwindigkeiten pro route_short_name und direction_id...")
 
-        grouped = df.groupby(['route_short_name', 'direction_id', 'first_stop_id', 'last_stop_id'])
+        grouped = df.groupby(['route_short_name', 'direction_id', 'first_stop_name', 'last_stop_name'])
 
         data_df=[]
 
         for name, group in grouped:
             # Berechne die Durchschnittsgeschwindigkeit für diese Gruppe
             avg_speed = group['trip_speed'].mean()
+            number_trips = group['trip_speed'].count()
 
             # Füge die Informationen zu dieser Gruppe (route_short_name, direction_id und Durchschnittsgeschwindigkeit) dem DataFrame hinzu
             data_dict={'route_short_name': name[0],
                        'direction_id': name[1],
                        'avg_speed': avg_speed,
-                       'first_stop_id':name[2],
-                       'last_stop_id':name[3]}
-            first_stop_name = stops[data_dict['first_stop_id']]
-            last_stop_name = stops[data_dict['last_stop_id']]
-            data_df.append((data_dict['route_short_name'],data_dict['direction_id'],data_dict['avg_speed'],first_stop_name, last_stop_name))
+                       'first_stop_name':name[2],
+                       'last_stop_name':name[3],
+                       'number_trips': number_trips}
+            #first_stop_name = stops[data_dict['first_stop_id']]
+            #last_stop_name = stops[data_dict['last_stop_id']]
+            data_df.append((data_dict['route_short_name'],data_dict['direction_id'],data_dict['avg_speed'], data_dict['first_stop_name'], data_dict['last_stop_name'], data_dict['number_trips']))
 
-        df1 = pd.DataFrame(data=data_df, columns=['route_short_name','direction_id', 'trip_speed', 'first_stop_name', 'last_stop_name'])
+        df1 = pd.DataFrame(data=data_df, columns=['route_short_name','direction_id', 'trip_speed', 'first_stop_name', 'last_stop_name', 'number_trips'])
 
         # Sortieren nach route_short_name
         ## FF Sortierung verbessert
@@ -163,13 +169,13 @@ def calc_speeds(path_to_gtfs):
         #df1_sorted.to_excel(path_to_gtfs + 'results/sorted_trip_speeds_route_direction' + str(datetime.now().strftime('_%d_%m_%Y')) + '.xlsx', index=False)
         #df1_sorted.to_latex(path_to_gtfs + 'results/trip_speeds_route_direction' + str(datetime.now().strftime('_%d_%m_%Y')) + '.tex', index=False)
 
-        ### FF: Ergänzung um Export in csv, zur weiteren Verwendung.
-        df1_sorted.to_csv(path_to_gtfs + 'results/trip_speeds_route_direction' + str(datetime.now().strftime('_%Y_%m_%d')) + '.csv', index=False)
+        ### FF: Ergänzung um Export in csv, zur weiteren Verwendung, entfernung des Datumsstempels
+        df1_sorted.to_csv(path_to_gtfs + 'results/trip_speeds_route_direction' + '.csv', index=False) #+ str(datetime.now().strftime('_%Y_%m_%d'))
 
 ### FF: Add function calls:
 if __name__ == "__main__":
     start = time.time()
-    gtfs_path = "../data/wien/"
+    gtfs_path = "./data/wien/timetable/"
     calc_speeds(path_to_gtfs= gtfs_path)
     stop = time.time()
     print(f"Took: %s to run" %(str(stop-start)))
