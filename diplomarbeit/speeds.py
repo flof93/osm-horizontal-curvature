@@ -122,6 +122,7 @@ def calc_speeds(path_to_gtfs):
         # df1 = pd.DataFrame(columns=['route_short_name', 'direction_id', 'first_stop_name', 'last_stop_name','avg_speed'])
 
         # Gruppierung nach route_short_name und direction_id durchführen und Durchschnittsgeschwindigkeit berechnen
+        # FF Gruppierung außerdem nach 1. und letzter Station - dadurch Kurzführungen erkennbar
         print(f"Berechne die Durchschnittsgeschwindigkeiten pro route_short_name und direction_id...")
 
         grouped = df.groupby(['route_short_name', 'direction_id', 'first_stop_name', 'last_stop_name'])
@@ -131,6 +132,8 @@ def calc_speeds(path_to_gtfs):
         for name, group in grouped:
             # Berechne die Durchschnittsgeschwindigkeit für diese Gruppe
             avg_speed = group['trip_speed'].mean()
+
+            # FF: Berechnung der Anzahl an Fahrten, welche bei der Durchschnittsgeschwindigkeit greifen
             number_trips = group['trip_speed'].count()
 
             # Füge die Informationen zu dieser Gruppe (route_short_name, direction_id und Durchschnittsgeschwindigkeit) dem DataFrame hinzu
