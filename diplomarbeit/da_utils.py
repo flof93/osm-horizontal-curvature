@@ -74,7 +74,7 @@ def get_heights_for_line(line: OSMRailwayLine) -> list:
     return get_heights(lat= [float(i) for i in line.lat], lon= [float(i) for i in line.lon])
 
 
-def generate_df(curvy: curvy.Curvy) -> pd.DataFrame:
+def generate_df(curvy: curvy.Curvy, generate_heights: bool = True) -> pd.DataFrame:
     df_return=pd.DataFrame()
     for line in curvy.railway_lines:
         d : dict = {
@@ -93,7 +93,9 @@ def generate_df(curvy: curvy.Curvy) -> pd.DataFrame:
             'From': getattr(line, 'from') if hasattr(line, 'from') else '',
             'To': getattr(line, 'to') if hasattr(line, 'to') else ''
         }
-        d['Höhe'] = get_heights(lat= d['Latitude'], lon= d['Longitude'])
+        if generate_heights:
+            d['Höhe'] = get_heights(lat= d['Latitude'], lon= d['Longitude'])
+            #TODO: Auf- und Abstieg berechnen
         df_line=pd.DataFrame(data=d)
         df_return = pd.concat([df_line, df_return])
     return df_return
