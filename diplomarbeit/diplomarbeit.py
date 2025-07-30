@@ -177,7 +177,7 @@ def main(data_path: str = './data/'):
         df_linien = da_utils.generate_df(network)
         df_linien.reset_index(inplace=True)
         #df_linien.to_feather('./Auswertung/Networks/%s.feather' % city)
-        df_linien.to_csv('%s%s/osm/processed.csv' % (data_path, city))
+        df_linien.to_csv(path_or_buf='%s%s/osm/processed.csv' % (data_path, city), index=False)
 
     return netzwerke
 
