@@ -104,7 +104,5 @@ def load_gtfs_speeds(path_to_trip_speeds):
     df = pd.DataFrame(data = filedata)
     return df
 
-def get_lines_in_city():
-    pass
-    #TODO Nur Linien aus DF Auswerfen
+
 
