@@ -106,5 +106,10 @@ def load_gtfs_speeds(path_to_trip_speeds):
     df = pd.DataFrame(data = filedata)
     return df
 
-
+def get_uniques(*lists: list) -> list:
+    ret = set()
+    for element in lists:
+        [ret.add(i) for i in element]
+    ret = list(ret)
+    return ret
 
