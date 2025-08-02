@@ -24,33 +24,43 @@ def exctract_lines(network: pd.DataFrame) -> pd.DataFrame:
 
     return df_lines
 
-    # for j in network.railway_lines:
-    #     try:
-    #         curv = max(j.gamma) / (max(j.s) / 1000) #TODO: Muss in Auswertung korrigiert werden!
-    #         curvature_angular.append(curv)
-    #         dist.append(max(j.s) / 1000)
-    #
-    #     except ValueError:
-    #         logger.warning(
-    #             "Ignoring %s %s, no values for curvature or change of angle available" % (str(city), str(j)))
-    #         curvature_angular.append(np.nan)
-    #         dist.append((np.nan))
-    #
-    #     stadt.append(city)
-    #     linie.append(j.ref if hasattr(j, 'ref') else '')
-    #     richtung.append(str(j))
-    #
-    #     try:
-    #         gauge.append(int(j.ways[0].tags['gauge']))
-    #     except (KeyError, IndexError, ValueError):
-    #         gauge.append(np.nan)
-    #         logger.warning("No Gauge data for line %s in %s available" % (str(j), str(city)))
-    #     # except TypeError: # könnte relevant sein, wenn die Linie im Dreischienengleis startet
-    #
-    #     ele = da_utils.get_heights_for_line(j)
-    #     if ele:
-    #         elevation_min.append(min(ele))
-    #         elevation_max.append(max(ele))
-    #     else:
-    #         elevation_min.append(np.nan)
-    #         elevation_max.append(np.nan)
+#TODO: Mappingtabelle erzeugen, dann in der GTFS-Ergebnistabelle die OSM-Bezeichnungen hinzufügen und dann mergen.
+
+def match_osm_on_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str) -> dict:
+    try:
+        with open(file=filepath) as data:
+            for row in data:
+                gtfs, osm  = row.split(sep=',')
+                matching_dict={osm: gtfs}
+
+    except FileNotFoundError:
+        matching_dict = dict()
+
+    osm_first_stops_for_gtfs = list()
+    osm_last_stops_for_gtfs = list()
+
+    for line in osm.iterrows():
+        osm_first_stop = line[1]['from']
+        osm_last_stop = line[1]['to']
+        try:
+            osm_first_stops_for_gtfs.append(matching_dict[osm_first_stop])
+        except KeyError:
+            osm_new, gtfs_new = match_station(single=osm_first_stop, multiple = gtfs['first_stop_name'].unique().tolist())
+            matching_dict[osm_new] = gtfs_new
+            osm_first_stops_for_gtfs.append(osm_new)
+
+        try:
+            osm_last_stops_for_gtfs.append(matching_dict[osm_last_stop])
+        except KeyError:
+            osm_new, gtfs_new = match_station(single=osm_last_stop, multiple=gtfs['last_stop_name'].unique().tolist())
+            matching_dict[osm_new] = gtfs_new
+            osm_last_stops_for_gtfs.append(osm_new)
+
+    osm['osm_first_stop_name'] = osm_first_stops_for_gtfs
+    osm['osm_last_stop_name'] = osm_last_stops_for_gtfs
+
+    return matching_dict
+
+
+
+
