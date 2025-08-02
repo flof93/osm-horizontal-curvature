@@ -4,10 +4,10 @@ from time import sleep
 import pandas as pd
 import difflib
 
-def match_station(single: str, multiple: list) -> Tuple[str, str]:
+def match_station(single: str, multiple: list) -> Tuple[str, str]: #TODO: Rewrite! Dosn't work as intended (Stammersdorf-Strebersdorf)
     possibles_list=[]
     thresh = 1
-    while len(possibles_list) < 5:
+    while len(possibles_list) < 1:
 
         for i in multiple:
             diffscore = difflib.SequenceMatcher(a=i, b=single).ratio()
@@ -18,7 +18,7 @@ def match_station(single: str, multiple: list) -> Tuple[str, str]:
                 continue
 
         if thresh > 0:
-            thresh -= 0.5
+            thresh -= 0.2
 
     if len(possibles_list) == 1:
         print('1 passende Station für %s gefunden:' % single)
