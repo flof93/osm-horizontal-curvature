@@ -1,3 +1,3 @@
-from diplomarbeit import da_utils
-from diplomarbeit import map_osm_gtfs
+from diplomarbeit import utils
 from diplomarbeit import add_speeds_to_osm
+from diplomarbeit import get_osm_data
