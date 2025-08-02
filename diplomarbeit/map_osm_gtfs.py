@@ -4,13 +4,13 @@ from typing import Tuple
 import pandas as pd
 import difflib
 
-def match_station(osm: str, gtfs: list) -> Tuple[str, str]:
+def match_station(single: str, multiple: list) -> Tuple[str, str]:
     possibles_list=[]
     thresh = 1
     while len(possibles_list) < 1:
 
-        for i in gtfs:
-            diffscore = difflib.SequenceMatcher(a=i, b=osm).ratio()
+        for i in multiple:
+            diffscore = difflib.SequenceMatcher(a=i, b=single).ratio()
             if diffscore >= thresh:
                 possibles_list.append((diffscore, i))
                 continue
@@ -21,13 +21,13 @@ def match_station(osm: str, gtfs: list) -> Tuple[str, str]:
             thresh -= 0.2
 
     if len(possibles_list) == 1:
-        print('1 passende Station für %s gefunden:' % osm)
+        print('1 passende Station für %s gefunden:' % single)
         print('%s Score: %s' %(possibles_list[0][1], possibles_list[0][0]))
         sleep(1)
-        return osm, possibles_list[0][1]
+        return single, possibles_list[0][1]
     else:
         possibles_list.sort()
-        print('Mögliche Stationen für %s:' % osm)
+        print('Mögliche Stationen für %s:' % single)
         for i in range(len(possibles_list)):
             print ('[%s] %s - %s' %(i, possibles_list[i][1], possibles_list[i][0]))
 
@@ -41,9 +41,9 @@ def match_station(osm: str, gtfs: list) -> Tuple[str, str]:
                 chosen = input('Gewählte Lösung: ')
 
         chosen = int(chosen)
-        return osm, possibles_list[chosen][1]
+        return single, possibles_list[chosen][1]
 
-def map_osm_gtfs(city):
+def map_osm_gtfs(osm_data: str, gtfs_data: str):
     pass
 
 
