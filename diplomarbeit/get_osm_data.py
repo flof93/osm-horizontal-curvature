@@ -14,7 +14,7 @@ import os
 
 import logging.config
 
-import da_utils
+import diplomarbeit as da
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ def load_csv_input(file_path: str) -> dict:
                 out_dict[row['machine_readable']]={'coords':(float(row['West']),float(row['Sued']),float(row['Ost']),float(row['Nord'])),
                                     'modes':modes, 'name':row['Stadt']}
             else:
-                bbox = da_utils.get_bounding_box(row['machine_readable'])
+                bbox = da.utils.get_bounding_box(row['machine_readable'])
                 if bbox:
                     out_dict[row['machine_readable']] = {'coords': (bbox[2], bbox[0], bbox[3], bbox[1]),
                                           'modes': modes, 'name':row['Stadt']}
@@ -174,7 +174,7 @@ def main(data_path: str = './data/'):
     print('\nCities added, generating DataFrames and calculating Heights.\n')
     for city in tqdm(netzwerke):
         network = netzwerke[city]
-        df_linien = da_utils.generate_df(network)
+        df_linien = da.utils.generate_df(network)
         df_linien.reset_index(inplace=True)
         #df_linien.to_feather('./Auswertung/Networks/%s.feather' % city)
         df_linien.to_csv(path_or_buf='%s%s/osm/processed.csv' % (data_path, city), index=False)
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     #coords: dict = load_csv_input("cities.csv")
     #coords = {'Budapest':{'coords':(18.8,47.30,19.40,47.70), 'modes':['tram','light_rail']}} # For testing purposes
     #coords = {'Gmunden': {'coords': (13.77,47.90,14,48), 'modes': ['tram', 'light_rail']}}  # For testing purposes
-    # bbox = da_utils.get_bounding_box('Portland')
+    # bbox = da.utils.get_bounding_box('Portland')
     # coords = {'Portland':{'coords':(bbox[2]-1, bbox[0]-1, bbox[3], bbox[1]), 'modes':['tram', 'light_rail']}}
     #
     # print ('Loading Cities')
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     # #stadt, linie, richtung, dist, curvature_angular, gauge, elevation_max, elevation_min = [], [], [], [], [], [], [], []
     # for city in tqdm(netzwerke):
     #     network = netzwerke[city]
-    #     df_linien = da_utils.generate_df(network)
+    #     df_linien = da.utils.generate_df(network)
     #     df_linien.reset_index(inplace=True)
     #
     #     # line_draw = network.railway_lines[0]
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     #     # fig, ax = plt.subplots(10, 10)
     #     # plt.show()
 
-#    df_linien['Höhe'] = da_utils.get_heights(lat= df_linien['Latitude'].tolist(), lon= df_linien['Longitude'].tolist())
+#    df_linien['Höhe'] = da.utils.get_heights(lat= df_linien['Latitude'].tolist(), lon= df_linien['Longitude'].tolist())
 
 
     #
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     #             logger.warning("No Gauge data for line %s in %s available" % (str(j), str(city)))
     #         # except TypeError: # könnte relevant sein, wenn die Linie im Dreischienengleis startet
     #
-    #         ele = da_utils.get_heights_for_line(j)
+    #         ele = da.utils.get_heights_for_line(j)
     #         if ele:
     #             elevation_min.append(min(ele))
     #             elevation_max.append(max(ele))
