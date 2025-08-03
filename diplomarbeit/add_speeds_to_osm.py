@@ -69,9 +69,7 @@ def extract_lines(network: pd.DataFrame) -> pd.DataFrame:
 
     return df_lines
 
-#TODO: Mappingtabelle erzeugen, dann in der GTFS-Ergebnistabelle die OSM-Bezeichnungen hinzufügen und dann mergen.
-
-def match_osm_on_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str) -> dict:
+def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str) -> dict:
     try:
         with open(file=filepath) as data:
             for row in data:
@@ -106,6 +104,4 @@ def match_osm_on_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str) -> d
 
     return matching_dict
 
-
-
-
+#TODO: add main function to merge dataframes on From-To Stations on OSM and GTFS
