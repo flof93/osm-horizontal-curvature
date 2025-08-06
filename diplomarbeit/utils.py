@@ -1,5 +1,7 @@
 import numpy as np
 import requests
+import zipfile
+import io
 
 from curvy.utils import OSMRailwayLine
 import curvy
@@ -113,3 +115,7 @@ def get_uniques(*lists: list) -> list:
     ret = list(ret)
     return ret
 
+def download_and_extraxt_gtfs(city: str, gtfs_url: str, data_path: str = './data/') -> None:
+    with requests.get(url=gtfs_url) as payload:
+        file = zipfile.ZipFile(io.BytesIO(payload.content))
+    file.extractall('%s%s/timetable' % (data_path, city))
