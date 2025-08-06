@@ -52,7 +52,7 @@ def calc_speeds(path_to_gtfs):
 
         for row in stop_times_reader:
             trip_id = row['trip_id']
-            shape_dist_traveled = float(row['shape_dist_traveled'])
+            shape_dist_traveled = float(row['shape_dist_traveled']) # TODO: Berechnung der durchschnittl. Geschwindigkeit mit Hilfe von OSM-Distanzen?!
             #stop_sequence = int(row['stop_sequence'])
             arrival_time_str = row['arrival_time']
 
