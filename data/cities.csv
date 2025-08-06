@@ -4,7 +4,7 @@ Graz;graz;15;46.9;15.6;47.2;tram;;
 Innsbruck;innsbruck;11.25;47.2;11.5;47.4;tram;;
 Linz;linz;14;48;14.5;48.5;;;
 Gmunden;gmunden;13.77;47.90;14;48;;14;
-Berlin;berlin;12.7;52.2;14.1;52.9;tram;17.4;
+Berlin;berlin;12.7;52.2;14.1;52.9;tram;17.4;https://www.vbb.de/vbbgtfs
 Dresden;dresden;;;;;;;
 München;muenchen;11.16;48.01;11.95;48.30;tram;18.4;
 Nürnberg;nuernberg;;;;;;;
@@ -25,7 +25,7 @@ Amsterdam;amsterdam;;;;;;;
 Sankt Petersburg;sankt_petersburg;;;;;;;
 Göteborg;goeteborg;;;;;;;
 Basel;basel;;;;;;17.7;
-Zürich;zuerich;;;;;;;
+Zürich;zuerich;;;;;;;https://data.stadt-zuerich.ch/dataset/vbz_fahrplandaten_gtfs/download/2025_google_transit.zip
 Toronto;toronto;;;;;;;
 Portland;portland;;;;;;;
 Ulm;ulm;;;;;;21.5;
@@ -39,3 +39,4 @@ Augsburg;augsburg;;;;;;18;
 Halle (Saale);halle_saale;;;;;;17.9;
 Krefeld;krefeld;;;;;;17.7;
 Bern;bern;;;;;;17.0;
+Rom;roma;;;;;;;https://dati.comune.roma.it/catalog/dataset/a7dadb4a-66ae-4eff-8ded-a102064702ba/resource/266d82e1-ba53-4510-8a81-370880c4678f/download/rome_static_gtfs.zip
