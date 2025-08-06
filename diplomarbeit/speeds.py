@@ -58,7 +58,8 @@ def calc_speeds(path_to_gtfs):
             arrival_time_str = row['arrival_time']
 
             # Wenn die Stundenangabe größer als 23 ist, subtrahiere 24 und erhöhe den Tag um 1
-            if int(arrival_time_str[:2]) > 23:
+            # FF: Splitten am ':' um einstellige Stundenangaben abzufangen.
+            if int(arrival_time_str.split(sep=':')[0]) > 23:
                 arrival_time_str = f"{int(arrival_time_str[:2])-24}{arrival_time_str[2:]}"
                 arrival_time = datetime.strptime(arrival_time_str, '%H:%M:%S') + timedelta(days=1)
             else:
