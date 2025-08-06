@@ -30,8 +30,9 @@ def match_station(single: str, multiple: list) -> Tuple[str, str]:
 
             if thresh <=0:
                 print('+++++++++++++++++++++++++\nALLE STATIONEN ANGEZEIGT!\n+++++++++++++++++++++++++')
-
-            answer = input('Bitte Station wählen ([M] für mehr Stationen, [X] für keine der Möglichkeiten): ')
+                answer = input('Bitte Station wählen ([X] für keine der Möglichkeiten): ')
+            else:
+                answer = input('Bitte Station wählen ([M] für mehr Stationen, [X] für keine der Möglichkeiten): ')
 
             if answer.lower() == 'x':
                 return single, ''
