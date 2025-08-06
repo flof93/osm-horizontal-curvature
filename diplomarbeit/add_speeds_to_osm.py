@@ -71,10 +71,8 @@ def extract_lines(network: pd.DataFrame) -> pd.DataFrame:
 
 def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str) -> dict:
     try:
-        with open(file=filepath) as data:
-            for row in data:
-                gtfs, osm  = row.split(sep=',')
-                matching_dict={osm: gtfs}
+        df = pd.read_csv(filepath_or_buffer=filepath)
+        matching_dict = dict(df.to_dict(orient='tight')['data'])
 
     except FileNotFoundError:
         matching_dict = dict()
