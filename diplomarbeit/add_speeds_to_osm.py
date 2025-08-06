@@ -105,3 +105,24 @@ def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str) -> d
     return matching_dict
 
 #TODO: add main function to merge dataframes on From-To Stations on OSM and GTFS
+
+def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame) -> pd.DataFrame:
+    return_data = pd.merge(left=osm,
+                           right=gtfs,
+                           how='left',
+                           left_on=['line_number','gtfs_first_stop_name', 'gtfs_last_stop_name'],
+                           right_on=['route_short_name','first_stop_name', 'last_stop_name']
+                           )
+    return return_data
+
+def main(data_dict, city):
+    gtfs = pd.read_csv('%s%s/timetable/results/trip_speeds_route_direction.csv' % (data_dict, city))
+    osm = extract_lines(pd.read_csv('%s%s/osm/processed.csv' % (data_dict, city)))
+    match_gtfs_on_osm(osm=osm, gtfs=gtfs, filepath='%s%s/station_matching.csv' % (data_dict, city))
+    new = merge_osm_gtfs(osm=osm, gtfs=gtfs)
+    return new
+
+if __name__=='__main__':
+    data_dict='./data/'
+    city = 'wien'
+    main(data_dict, city)
