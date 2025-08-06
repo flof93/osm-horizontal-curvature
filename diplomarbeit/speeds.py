@@ -96,6 +96,10 @@ def calc_speeds(path_to_gtfs):
             total_time = (data[-1][1] - data[0][1]).total_seconds()
 
             # Berechne die Durchschnittsgeschwindigkeit (in km/h)
+            # FF: Ergänzung um Erkennung der Distanz-Einheit
+            if data[1][0] < 20: # Für Fall, dass Distanzen in km angegeben sind. (Erkennung, wenn 1. Distanz < 20m)
+                total_distance = total_distance * 1000
+
             trip_speed = (total_distance / total_time) * 3.6
 
             # Ausgangstation ermitteln
