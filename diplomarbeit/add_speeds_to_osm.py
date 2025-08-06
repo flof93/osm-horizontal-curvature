@@ -124,5 +124,5 @@ def main(data_dict, city):
 
 if __name__=='__main__':
     data_dict='./data/'
-    city = 'wien'
+    city = 'roma'
     main(data_dict, city)

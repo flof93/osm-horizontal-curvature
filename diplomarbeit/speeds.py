@@ -182,7 +182,7 @@ def calc_speeds(path_to_gtfs):
 ### FF: Add function calls:
 if __name__ == "__main__":
     start = time.time()
-    gtfs_path = "./data/wien/timetable/"
+    gtfs_path = "./data/roma/timetable/"
     calc_speeds(path_to_gtfs= gtfs_path)
     stop = time.time()
     print(f"Took: %s to run" %(str(stop-start)))
