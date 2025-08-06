@@ -97,12 +97,13 @@ def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inli
             matching_dict[osm_new] = gtfs_new
             osm_last_stops_for_gtfs.append(gtfs_new)
 
-    osm['gtfs_first_stop_name'] = osm_first_stops_for_gtfs
-    osm['gtfs_last_stop_name'] = osm_last_stops_for_gtfs
+    if inline:
+        osm['gtfs_first_stop_name'] = osm_first_stops_for_gtfs
+        osm['gtfs_last_stop_name'] = osm_last_stops_for_gtfs
+
+    pd.DataFrame.from_dict(data=matching_dict, orient='index').to_csv(path_or_buf=filepath)
 
     return matching_dict
-
-#TODO: add main function to merge dataframes on From-To Stations on OSM and GTFS
 
 def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame) -> pd.DataFrame:
     return_data = pd.merge(left=osm,
