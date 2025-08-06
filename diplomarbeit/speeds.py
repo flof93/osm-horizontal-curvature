@@ -15,12 +15,11 @@ def calc_speeds(path_to_gtfs):
     routes = pd.read_csv(path_to_gtfs + "routes.txt")
     trips = pd.read_csv(path_to_gtfs + "trips.txt")
     stop_times = pd.read_csv(path_to_gtfs + "stop_times.txt")
-    #stops = pd.read_csv(path_to_gtfs + "stops.txt")
 
+    #FF: Einlesen der Stops-Datei
+    stops = pd.read_csv(path_to_gtfs + "stops.txt")
+    stops = dict(stops[['stop_id', 'stop_name']].to_dict(orient='tight')['data'])
 
-    with open(file=path_to_gtfs + "stops.txt", mode='r') as stopfile:
-        stops_dict = csv.reader(stopfile)
-        stops = {row[0]:row[1] for row in stops_dict}
 
     # GTFS Daten bereinigen, sodass nur mehr Straßenbahn-Routen enthalten sind
     print(f"Bereinigen der Datensätze auf Straßenbahnen...")
