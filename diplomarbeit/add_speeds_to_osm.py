@@ -69,7 +69,7 @@ def extract_lines(network: pd.DataFrame) -> pd.DataFrame:
 
     return df_lines
 
-def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str) -> dict:
+def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inline: bool = True) -> dict:
     try:
         df = pd.read_csv(filepath_or_buffer=filepath)
         matching_dict = dict(df.to_dict(orient='tight')['data'])
