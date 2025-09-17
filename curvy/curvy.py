@@ -109,13 +109,20 @@ class Curvy:
         if railway_type not in Curvy.supported_railway_types:
             raise ValueError("The desired railway type %s is not supported" % railway_type)
 
-        track_query = """(node[""" + "railway" + """=""" + railway_type + """](""" + str(self.lat_sw) + """,""" + str(
-            self.lon_sw) + """,""" + str(self.lat_ne) + """,""" + str(self.lon_ne) + """);
-                         way[""" + "railway" + """=""" + railway_type + """](""" + str(self.lat_sw) + """,""" + str(
-            self.lon_sw) + """,""" + str(self.lat_ne) + """,""" + str(self.lon_ne) + """););
-                         (._;>;);
-                         out body;
-                      """
+        # track_query = """(node[""" + "railway" + """=""" + railway_type + """](""" + str(self.lat_sw) + """,""" + str(
+        #     self.lon_sw) + """,""" + str(self.lat_ne) + """,""" + str(self.lon_ne) + """);
+        #                  way[""" + "railway" + """=""" + railway_type + """](""" + str(self.lat_sw) + """,""" + str(
+        #     self.lon_sw) + """,""" + str(self.lat_ne) + """,""" + str(self.lon_ne) + """););
+        #                  (._;>;);
+        #                  out body;
+        #               """
+
+        ### FF: rewrite um die Wegpunkte und Wege rekursiv abzufragen
+        track_query = ("""rel[route = """+ railway_type + """]("""+ str(self.lat_sw) +""","""+ str(self.lon_sw) + ""","""+ str(self.lat_ne) + ""","""+ str(self.lon_ne) + """) -> .relation;
+                       nw(r.relation);
+                       (._;>>;);
+                       out body;
+                       """)
 
 
         if railway_type == "rail":  # Railway routes use train instead of rail
