@@ -17,7 +17,7 @@ def calc_speeds(path_to_gtfs):
     stop_times = pd.read_csv(path_to_gtfs + "stop_times.txt")
 
     #FF: Einlesen der Stops-Datei
-    stops = pd.read_csv(path_to_gtfs + "stops.txt")
+    stops = pd.read_csv(path_to_gtfs + "stops.txt", dtype={'stop_id':'str'})
     stops = dict(stops[['stop_id', 'stop_name']].to_dict(orient='tight')['data'])
 
 
@@ -96,10 +96,13 @@ def calc_speeds(path_to_gtfs):
 
             # Berechne die Durchschnittsgeschwindigkeit (in km/h)
             # FF: Ergänzung um Erkennung der Distanz-Einheit
-            if data[1][0] < 20: # Für Fall, dass Distanzen in km angegeben sind. (Erkennung, wenn 1. Distanz < 20m)
-                total_distance = total_distance * 1000
-
-            trip_speed = (total_distance / total_time) * 3.6
+            if len(data) > 1:
+                if data[1][0] < 20: # Für Fall, dass Distanzen in km angegeben sind. (Erkennung, wenn 1. Distanz < 20m)
+                    total_distance = total_distance * 1000
+            try:
+                trip_speed = (total_distance / total_time) * 3.6
+            except ZeroDivisionError:
+                trip_speed = pd.NA
 
             # Ausgangstation ermitteln
             first_stop_id = data[0][2]
