@@ -11,7 +11,7 @@ def match_station(single: str, multiple: list) -> Tuple[str, str]:
 
     scores_list: list = []
     for i in multiple:
-        score = difflib.SequenceMatcher(a=i, b=single).ratio()  #TODO: Umgang mit NaN (wenn kein from oder to-Tag in den OSM Daten ist)
+        score = difflib.SequenceMatcher(a=i, b=single).ratio()
         scores_list.append((score, i))
 
     scores_list.sort(reverse=True)
