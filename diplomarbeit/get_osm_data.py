@@ -134,8 +134,9 @@ def load_data(coordinates: dict, force_download: bool = False, data_path: str = 
 
     return networks
 
-def load_csv_input(file_path: str) -> dict:
+def load_csv_input(data_path: str, filename: str) -> dict:
     """loads a csv-File with Cities and returns a dictionary"""
+    file_path = data_path + filename
     out_dict = {}
     with open(file_path, newline='') as csvfile:
         data = csv.DictReader(csvfile, delimiter=";")#, quotechar='\'', quoting=csv.QUOTE_NONNUMERIC)
@@ -153,7 +154,7 @@ def load_csv_input(file_path: str) -> dict:
                 out_dict[row['machine_readable']]={'coords':(float(row['West']),float(row['Sued']),float(row['Ost']),float(row['Nord'])),
                                     'modes':modes, 'name':row['Stadt']}
             else:
-                bbox = da.utils.get_bounding_box(row['machine_readable'])
+                bbox = da.utils.get_bounding_box(query= row['machine_readable'], data_path= data_path)
                 if bbox:
                     out_dict[row['machine_readable']] = {'coords': (bbox[2], bbox[0], bbox[3], bbox[1]),
                                           'modes': modes, 'name':row['Stadt']}
@@ -166,8 +167,7 @@ def load_csv_input(file_path: str) -> dict:
 
 
 def main(data_path: str = './data/'):
-    cityfile = data_path + 'cities.csv'
-    coords: dict = load_csv_input(file_path= cityfile)
+    coords: dict = load_csv_input(data_path=data_path, filename='cities.csv')
     print('Loading Cities\n')
     netzwerke = load_data(coordinates= coords, force_download=False, data_path = data_path)
 

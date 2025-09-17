@@ -2,14 +2,14 @@ import numpy as np
 import requests
 import zipfile
 import io
+import os
 
 from curvy.utils import OSMRailwayLine
 import curvy
 import pandas as pd
 
 
-def get_bounding_box(query): #TODO: evtl umbauen auf gdf aus osmnx?! Weil weniger gefahr Strecken abzuschneiden???
-    # Nominatim-Url
+def get_nominatim_bounding_box(query):     # Nominatim-Url
     url = "https://nominatim.openstreetmap.org/search"
     headers = {'User-agent': 'Mozilla/5.0'}
 
@@ -32,14 +32,38 @@ def get_bounding_box(query): #TODO: evtl umbauen auf gdf aus osmnx?! Weil wenige
             bbox = result.get('boundingbox')
 
             if bbox:
-                return [float(coord) for coord in bbox]
+                nominatim_bbox_out = [float(coord) for coord in bbox]
             else:
-                return []
+                nominatim_bbox_out =  []
 
         else:
-            return []
+            nominatim_bbox_out =  []
     else:
         raise requests.exceptions.HTTPError
+
+    return nominatim_bbox_out
+
+def get_gtfs_bounding_box(gtfs_path: str):
+    stops = pd.read_csv(gtfs_path + "shapes.txt")
+    east = min(stops['shape_pt_lon'])
+    west = max(stops['shape_pt_lon'])
+    south = min(stops['shape_pt_lat'])
+    north = max(stops['shape_pt_lat'])
+    return [south, north, east, west]
+
+def get_bounding_box(query:str, data_path:str):
+    nominatim_bbox = get_nominatim_bounding_box(query)
+    if os.path.exists(data_path + query + '/timetable/shapes.txt'):
+        gtfs_bbox = get_gtfs_bounding_box(data_path + query + '/timetable/')
+    else:
+        gtfs_bbox = [np.NaN,np.NaN,np.NaN,np.NaN]
+
+    south = min(nominatim_bbox[0], gtfs_bbox[0])
+    north = min(nominatim_bbox[1], gtfs_bbox[1])
+    east = min(nominatim_bbox[2], gtfs_bbox[2])
+    west = min(nominatim_bbox[3], gtfs_bbox[3])
+
+    return [south, north, east, west]
 
 
 def get_heights(lat: list, lon: list) -> list:
