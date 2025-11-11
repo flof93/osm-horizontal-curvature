@@ -121,7 +121,20 @@ def generate_df(curvy: curvy.Curvy, generate_heights: bool = True) -> pd.DataFra
         }
         if generate_heights:
             d['Höhe'] = get_heights(lat= d['Latitude'], lon= d['Longitude'])
-            #TODO: Auf- und Abstieg berechnen
+            aufstieg_list = [0]
+            abstieg_list = [0]
+            for i in range(len(d['Höhe'])):
+                if i == 0:
+                    continue
+                    # aufstieg_list.append(0)
+                    # abstieg_list.append(0)
+                else:
+                    delta_h=d['Höhe'][i]-d['Höhe'][i-1]
+                    aufstieg_list.append(aufstieg_list[i-1] + abs(delta_h)) if delta_h > 0 else aufstieg_list.append(aufstieg_list[i-1])
+                    abstieg_list.append(abstieg_list[i-1] + abs(delta_h)) if delta_h < 0 else abstieg_list.append(abstieg_list[i-1])
+            d['Aufstieg'] = aufstieg_list
+            d['Abstieg'] = abstieg_list
+
         df_line=pd.DataFrame(data=d)
         df_return = pd.concat([df_line, df_return])
     return df_return
