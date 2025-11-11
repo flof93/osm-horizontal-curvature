@@ -116,7 +116,18 @@ def calc_speeds(path_to_gtfs):
             first_stop_name = stops[first_stop_id]
             last_stop_name = stops[last_stop_id]
 
-            data_df.append([trip_id, trip_speed, first_stop_id, last_stop_id, first_stop_name, last_stop_name])
+            #FF: Stationsabstände errechnen:
+            delta_dist_list = []
+            for i,j in enumerate(data):
+                delta_dist_list.append(data[i][0]-data[i-1][0])
+            del delta_dist_list[0] # Entferne 1. Stationsabstand (ist immer 0)
+            delta_dist = pd.Series(delta_dist_list).mean()
+
+            if len(data) > 1:
+                if data[1][0] < 20: # Für Fall, dass Distanzen in km angegeben sind. (Erkennung, wenn 1. Distanz < 20m)
+                    delta_dist = delta_dist * 1000
+
+            data_df.append([trip_id, trip_speed, first_stop_id, last_stop_id, first_stop_name, last_stop_name, delta_dist, total_time])
 
             # Füge trip_id und Durchschnittsgeschwindigkeit dem DataFrame hinzu
             # df = pd.concat([df, pd.DataFrame({'trip_id': [trip_id], 'trip_speed': [trip_speed]})], ignore_index=True)#, 'first_stop_id': [first_stop_id], 'last_stop_id': [last_stop_id]})], ignore_index=True)
