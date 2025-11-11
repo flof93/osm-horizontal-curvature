@@ -157,6 +157,12 @@ def calc_speeds(path_to_gtfs):
             # FF: Berechnung der Anzahl an Fahrten, welche bei der Durchschnittsgeschwindigkeit greifen
             number_trips = group['trip_speed'].count()
 
+            # FF: Berechnung durchschnittlicher Haltestellenabstand
+            avg_dist = group['delta_dist'].mean()
+
+            # FF: Berechnung der durchschnittlichen Fahrzeit
+            avg_time = group['total_time'].mean()
+
             # Füge die Informationen zu dieser Gruppe (route_short_name, direction_id und Durchschnittsgeschwindigkeit) dem DataFrame hinzu
             data_dict={'route_short_name': name[0],
                        'direction_id': name[1],
