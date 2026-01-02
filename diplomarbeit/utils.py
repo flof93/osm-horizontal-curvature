@@ -1,12 +1,25 @@
+import shutil
+
 import numpy as np
 import requests
 import zipfile
 import io
 import os
 
+import diplomarbeit.buildings
 from curvy.utils import OSMRailwayLine
 import curvy
 import pandas as pd
+
+
+import logging.config
+import csv
+
+from osmnx.utils import ts
+
+import gtfs_kit as gk
+
+logger = logging.getLogger(__name__)
 
 
 def get_nominatim_bounding_box(query):     # Nominatim-Url
@@ -74,6 +87,7 @@ def get_bounding_box(query:str, data_path:str, osm_name:str):
 
 def get_heights(lat: list, lon: list) -> list:
     url = 'http://localhost:8080/api/v1/lookup'
+    headers = {'Accept': 'application/json','Content-Type': 'application/json'}
     list_of_points = []
     ele = []
 
@@ -90,7 +104,7 @@ def get_heights(lat: list, lon: list) -> list:
 
     json = {'locations': list_of_points}
 
-    answer = requests.post(url=url, json=json)
+    answer = requests.post(url=url, json=json, headers=headers)
     if answer.status_code == 200:
         results = answer.json()
         for result in results['results']:
