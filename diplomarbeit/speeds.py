@@ -12,12 +12,83 @@ def calc_speeds(path_to_gtfs):
 
     # GTFS-Datensatz laden
     print(f"Daten einlesen...")
-    routes = pd.read_csv(path_to_gtfs + "routes.txt")
-    trips = pd.read_csv(path_to_gtfs + "trips.txt")
-    stop_times = pd.read_csv(path_to_gtfs + "stop_times.txt")
+    routes = pd.read_csv(path_to_gtfs + "routes.txt", dtype={
+        "route_id": "string",
+        "agency_id": "string",
+        "route_short_name": "string",
+        "route_long_name": "string",
+        "route_desc": "string",
+        "route_type": "Int64",
+        "route_url": "string",
+        "route_color": "string",
+        "route_text_color": "string",
+        "route_sort_order": "Int64",
+        "continuous_pickup": "Int64",
+        "continuous_drop_off": "Int64",
+        "network_id": "string",
+    })
+
+    trips = pd.read_csv(path_to_gtfs + "trips.txt", dtype={
+        "route_id": "string",
+        "service_id": "string",
+        "trip_id": "string",
+        "trip_headsign": "string",
+        "trip_short_name": "string",
+        "trip_long_name": "string",
+        "direction_id": "Int64",
+        "block_id": "string",
+        "shape_id": "string",
+        "wheelchair_accessible": "Int64",
+        "bikes_allowed": "Int64"
+    })
+
+    stop_times_dtypes={
+        "trip_id": "string",
+        "arrival_time": "string",
+        "departure_time": "string",
+        "stop_id": "string",
+        "stop_sequence": "Int64",
+        "stop_headsign": "string",
+        "pickup_type": "Int64",
+        "drop_off_type": "Int64",
+        "continuous_pickup": "Int64",
+        "continuous_drop_off": "Int64",
+        "shape_dist_traveled": "float64",
+        "timepoint": "Int64",
+    }
+
+    # Überprüfung ob es eine verbesserte stop-times.txt gibt (Ergänzung von fehlenden shape_dist_traveled)
+
+    # if os.path.exists(path_to_gtfs + "stop_times_with_shape_dist.txt"):
+    #     stop_times_path = path_to_gtfs + "stop_times_with_shape_dist.txt"
+    # else:
+    #     stop_times_path = path_to_gtfs + "stop_times.txt"
+
+    stop_times_path = path_to_gtfs + "stop_times.txt"
+    stop_times = pd.read_csv(stop_times_path, dtype=stop_times_dtypes)
+
+    if 'shape_dist_traveled' not in stop_times.columns or stop_times['shape_dist_traveled'].isnull().any() and os.path.exists(path= path_to_gtfs + 'shapes.txt'):
+        print("""Berechnung von 'shape_dist_traveled'...""")
+        feed = gk.read_feed(path_or_url = path_to_gtfs, dist_units= 'm')
+        stop_times = feed.append_dist_to_stop_times().stop_times
 
     #FF: Einlesen der Stops-Datei
-    stops = pd.read_csv(path_to_gtfs + "stops.txt", dtype={'stop_id':'str'})
+    stops = pd.read_csv(path_to_gtfs + "stops.txt", dtype={
+        "stop_id": "string",
+        "stop_code": "string",
+        "stop_name": "string",
+        "stop_desc": "string",
+        "stop_lat": "float64",
+        "stop_lon": "float64",
+        "zone_id": "string",
+        "stop_url": "string",
+        "location_type": "Int64",
+        "parent_station": "string",
+        "stop_timezone": "string",
+        "wheelchair_boarding": "Int64",
+        "level_id": "string",
+        "platform_code": "string",
+    })
     stops = dict(stops[['stop_id', 'stop_name']].to_dict(orient='tight')['data'])
 
 
