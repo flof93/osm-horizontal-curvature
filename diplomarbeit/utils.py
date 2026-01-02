@@ -44,24 +44,30 @@ def get_nominatim_bounding_box(query):     # Nominatim-Url
     return nominatim_bbox_out
 
 def get_gtfs_bounding_box(gtfs_path: str):
-    stops = pd.read_csv(gtfs_path + "shapes.txt")
-    east = min(stops['shape_pt_lon'])
-    west = max(stops['shape_pt_lon'])
-    south = min(stops['shape_pt_lat'])
-    north = max(stops['shape_pt_lat'])
+    shapes = pd.read_csv(gtfs_path + "shapes.txt", dtype={'shape_id':'str'}, usecols=['shape_id', 'shape_pt_lat', 'shape_pt_lon'])
+    trips = pd.read_csv(gtfs_path + 'trips.txt', dtype={'shape_id':'str', 'route_id':'str'}, usecols=['shape_id', 'route_id'])
+    routes = pd.read_csv(gtfs_path + 'routes.txt', dtype={'shape_id':'str', 'route_id':'str'}, usecols=['route_type', 'route_id'])
+
+    df = routes[routes['route_type'].isin([0, 900, 901, 902])].merge(trips)
+    df_tram = df.merge(shapes)
+
+    east = min(df_tram['shape_pt_lon'])
+    west = max(df_tram['shape_pt_lon'])
+    south = min(df_tram['shape_pt_lat'])
+    north = max(df_tram['shape_pt_lat'])
     return [south, north, east, west]
 
-def get_bounding_box(query:str, data_path:str):
-    nominatim_bbox = get_nominatim_bounding_box(query)
+def get_bounding_box(query:str, data_path:str, osm_name:str):
+    nominatim_bbox = get_nominatim_bounding_box(osm_name)
     if os.path.exists(data_path + query + '/timetable/shapes.txt'):
         gtfs_bbox = get_gtfs_bounding_box(data_path + query + '/timetable/')
     else:
         gtfs_bbox = [np.NaN,np.NaN,np.NaN,np.NaN]
 
     south = min(nominatim_bbox[0], gtfs_bbox[0])
-    north = min(nominatim_bbox[1], gtfs_bbox[1])
+    north = max(nominatim_bbox[1], gtfs_bbox[1])
     east = min(nominatim_bbox[2], gtfs_bbox[2])
-    west = min(nominatim_bbox[3], gtfs_bbox[3])
+    west = max(nominatim_bbox[3], gtfs_bbox[3])
 
     return [south, north, east, west]
 
