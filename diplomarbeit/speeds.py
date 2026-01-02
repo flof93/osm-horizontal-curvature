@@ -1,8 +1,10 @@
+import numpy as np
 import pandas as pd
 import csv
 import os
 from datetime import datetime, timedelta
 import time
+import gtfs_kit as gk
 
 # Pfad zum GTFS-Datensatz angeben
 # path_to_gtfs = "./data/wien/"
