@@ -176,3 +176,101 @@ def download_and_extraxt_gtfs(city: str, gtfs_url: str, data_path: str = './data
     with requests.get(url=gtfs_url) as payload:
         file = zipfile.ZipFile(io.BytesIO(payload.content))
     file.extractall('%s%s/timetable' % (data_path, city))
+
+def load_csv_input(data_path: str, filename: str = 'cities.csv') -> dict:
+    """loads a csv-File with Cities and returns a dictionary"""
+    file_path = data_path + filename
+    out_dict = {}
+    with open(file_path, newline='') as csvfile:
+        data = csv.DictReader(csvfile, delimiter=";")#, quotechar='\'', quoting=csv.QUOTE_NONNUMERIC)
+        for row in data:
+
+            if row['RailModes'] is None:
+                modes = ['']
+            else:
+                modes = row['RailModes'].split(',')
+
+            if modes == ['']:
+                modes = ['tram', 'light_rail']
+
+            if row['West'] and row['Sued'] and row['Ost'] and row['Nord']:
+                out_dict[row['machine_readable']]={'coords':(float(row['West']),float(row['Sued']),float(row['Ost']),float(row['Nord'])),
+                                    'modes':modes, 'name':row['Stadt'], 'ignore_linenumber': row['Ignore_LineNumber']}
+            else:
+                bbox = get_bounding_box(query= row['machine_readable'], data_path= data_path, osm_name=row['OSM-Name'])
+                if bbox:
+                    out_dict[row['machine_readable']] = {'coords': (bbox[2], bbox[0], bbox[3], bbox[1]),
+                                          'modes': modes, 'name':row['Stadt'], 'ignore_linenumber': row['Ignore_LineNumber']}
+                else:
+                    logger.warning('No bbox for City %s' % row['Stadt'])
+                    continue
+
+    logger.info("Loaded CSV-File: %s" % file_path)
+    return out_dict
+
+def cleanup_input(data_path: str, filename: str = 'cities.csv', recalculate: bool = False):
+    data = pd.read_csv(data_path+filename, sep=';')
+    west, sued, ost, nord, buffer = [], [], [], [], []
+
+    if not 'West' in data.columns or recalculate:
+        data["West"] = np.nan
+    if not 'Ost' in data.columns or recalculate:
+        data["Ost"] = np.nan
+    if not 'Sued' in data.columns or recalculate:
+        data["Sued"] = np.nan
+    if not 'Nord' in data.columns or recalculate:
+        data["Nord"] = np.nan
+    if not 'Buffer_Width' in data.columns or recalculate:
+        data['Buffer_Width'] = np.nan
+
+    for i, row in data.iterrows():
+        print(ts(), '-', row['Stadt'])
+
+        feed = None
+        if not os.path.exists(data_path + row['machine_readable'] + '/timetable'):
+            try:
+                feed = gk.read_feed(row['GTFS-Daten'], 'm')
+            except [requests.exceptions.MissingSchema, shutil.ReadError]:
+                pass
+
+        make_folders(data_path, row['machine_readable'])
+        if feed:
+            feed.to_file(data_path + row['machine_readable'] + '/timetable/')
+
+
+        if pd.isna(row['West']) or pd.isna(row['Ost']) or pd.isna(row['Sued']) or pd.isna(row['Nord']):
+            bbox = get_bounding_box(query=row['machine_readable'], data_path=data_path, osm_name=row['OSM-Name'])
+            if bbox:
+                west.append(bbox[2])
+                sued.append(bbox[0])
+                ost.append(bbox[3])
+                nord.append(bbox[1])
+            else:
+                continue
+        else:
+            west.append(row['West'])
+            sued.append(row['Sued'])
+            ost.append(row['Ost'])
+            nord.append(row['Nord'])
+
+        if pd.isna(row['Buffer_Width']):
+            buffer.append(diplomarbeit.buildings.calculate_buffer_width(row['OSM-Name']))
+        else:
+            buffer.append(row['Buffer_Width'])
+
+    data.drop(labels=['West', 'Ost', 'Sued', 'Nord', 'Buffer_Width'], axis='columns')
+    data['West'] = west
+    data['Ost'] = ost
+    data['Sued'] = sued
+    data['Nord'] = nord
+    data['Buffer_Width'] = buffer
+
+
+
+    data.sort_values(by='machine_readable', axis='rows').to_csv(data_path+filename, sep=';', index=False)
+
+
+def make_folders(data_path: str, city: str) -> None:
+    os.makedirs(data_path + city + '/osm', exist_ok=True)
+    os.makedirs(data_path + city + '/timetable', exist_ok=True)
+    os.makedirs(data_path + city + '/buildings', exist_ok=True)
