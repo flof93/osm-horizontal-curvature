@@ -178,6 +178,13 @@ def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, ignore_line_number: bo
         left_on = ['line_number', 'gtfs_first_stop_name', 'gtfs_last_stop_name']
         right_on = ['route_short_name', 'first_stop_name', 'last_stop_name']
 
+    # if ignore_line_number:
+    #     left_on = ['from', 'to']
+    #     right_on = ['osm_first_stop_name', 'osm_last_stop_name']
+    # else:
+    #     left_on = ['line_number', 'from', 'to']
+    #     right_on = ['route_short_name', 'osm_first_stop_name', 'osm_last_stop_name']
+
     return_data = pd.merge(left=osm.astype({'line_number': 'str'}),
                            right=gtfs.astype({'route_short_name': 'str'}),
                            how='left',
@@ -186,12 +193,16 @@ def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, ignore_line_number: bo
                            )
     return return_data
 
+def calc_avg_speed_osm(data: pd.DataFrame):
+    if data['trip_speed'].isnull().all():
+        data['trip_speed'] = data['distance'] / data['avg_time'] * 3600
 
 def main(data_dict: str, city: str, ignore_line_number: bool = False):
     gtfs = pd.read_csv('%s%s/timetable/results/trip_speeds_route_direction.csv' % (data_dict, city))
     osm = extract_lines(pd.read_csv('%s%s/osm/processed.csv' % (data_dict, city), dtype={'Nummer':'string'}))
     match_gtfs_on_osm(osm=osm, gtfs=gtfs, filepath='%s%s/station_matching.csv' % (data_dict, city))
     new = merge_osm_gtfs(osm=osm, gtfs=gtfs, ignore_line_number= ignore_line_number)
+    calc_avg_speed_osm(data=new)
     return new
 
 
