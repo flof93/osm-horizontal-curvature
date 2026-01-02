@@ -53,7 +53,7 @@ def match_station(single: str, multiple: list) -> Tuple[str, str]:
                     continue
 
 
-def extract_lines(network: pd.DataFrame) -> pd.DataFrame:
+def extract_lines(network: pd.DataFrame) -> gpd.GeoDataFrame:
     grouped = network.groupby(['Linie'])
     data_df = []
 
@@ -80,8 +80,8 @@ def extract_lines(network: pd.DataFrame) -> pd.DataFrame:
                         #group['Gauge'].unique()[0],
                         ])
 
-    columns = ['line_name', 'line_number', 'from', 'to', 'distance', 'curvature']
-    df_lines = pd.DataFrame(data=data_df, columns=columns)
+    columns = ['line_name', 'line_number', 'from', 'to', 'distance', 'curvature', 'height_up', 'height_down', 'geometry']
+    df_lines = gpd.GeoDataFrame(data=data_df, columns=columns, crs='EPSG:4326')
 
     return df_lines
 
