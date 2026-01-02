@@ -3,6 +3,9 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import difflib
+import geopandas as gpd
+import shapely as shp
+import shapely.errors
 
 
 def match_station(single: str, multiple: list) -> Tuple[str, str]:
@@ -57,13 +60,23 @@ def extract_lines(network: pd.DataFrame) -> pd.DataFrame:
     for name, group in grouped:
         distance = group['Distanz'].max() / 1000
         curvature = group['Winkel'].max() / distance
+        aufstieg = group['Aufstieg'].max()
+        abstieg = group['Abstieg'].max() #Todo: Normieren über Streckenlänge
+        geom_list = [list(x) for x in zip(group['Longitude'], group['Latitude'])]
+        try:
+            geometry = shp.LineString(coordinates=geom_list)
+        except shapely.errors.GEOSException:
+            geometry = None
 
         data_df.append([name[0],
                         group['Nummer'].unique()[0],
                         group['From'].unique()[0],
                         group['To'].unique()[0],
                         distance,
-                        curvature
+                        curvature,
+                        aufstieg,
+                        abstieg,
+                        geometry
                         #group['Gauge'].unique()[0],
                         ])
 
