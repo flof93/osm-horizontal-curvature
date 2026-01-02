@@ -1,4 +1,4 @@
-import csv
+
 from tqdm import tqdm
 
 import curvy
@@ -101,15 +101,9 @@ def load_data(coordinates: dict, force_download: bool = False, data_path: str = 
     networks = {}
 
     for location in tqdm(coordinates):
-        if not os.path.exists(data_path + location):
-            os.makedirs(data_path + location + '/osm')
-            os.makedirs(data_path + location + '/timetable')
-
-        elif not os.path.exists(data_path + location + '/osm'):
-            os.makedirs(data_path + location + '/osm')
-
-        elif not os.path.exists(data_path + location + '/timetable'):
-            os.makedirs(data_path + location + '/timetable')
+        os.makedirs(data_path + location + '/osm', exist_ok=True)
+        os.makedirs(data_path + location + '/timetable', exist_ok=True)
+        os.makedirs(data_path + location + '/buildings', exist_ok=True)
 
         download = force_download
         try:
@@ -134,52 +128,21 @@ def load_data(coordinates: dict, force_download: bool = False, data_path: str = 
 
     return networks
 
-def load_csv_input(data_path: str, filename: str) -> dict:
-    """loads a csv-File with Cities and returns a dictionary"""
-    file_path = data_path + filename
-    out_dict = {}
-    with open(file_path, newline='') as csvfile:
-        data = csv.DictReader(csvfile, delimiter=";")#, quotechar='\'', quoting=csv.QUOTE_NONNUMERIC)
-        for row in data:
-
-            if row['RailModes'] is None:
-                modes = ['']
-            else:
-                modes = row['RailModes'].split(',')
-
-            if modes == ['']:
-                modes = ['tram', 'light_rail']
-
-            if row['West'] and row['Sued'] and row['Ost'] and row['Nord']:
-                out_dict[row['machine_readable']]={'coords':(float(row['West']),float(row['Sued']),float(row['Ost']),float(row['Nord'])),
-                                    'modes':modes, 'name':row['Stadt']}
-            else:
-                bbox = da.utils.get_bounding_box(query= row['machine_readable'], data_path= data_path)
-                if bbox:
-                    out_dict[row['machine_readable']] = {'coords': (bbox[2], bbox[0], bbox[3], bbox[1]),
-                                          'modes': modes, 'name':row['Stadt']}
-                else:
-                    logger.warning('No bbox for City %s' % row['Stadt'])
-                    continue
-
-    logger.info("Loaded CSV-File: %s" % file_path)
-    return out_dict
-
-
 def main(data_path: str = './data/'):
-    coords: dict = load_csv_input(data_path=data_path, filename='cities.csv')
+    coords: dict = da.utils.load_csv_input(data_path=data_path, filename='cities.csv')
     print('Loading Cities\n')
     netzwerke = load_data(coordinates= coords, force_download=False, data_path = data_path)
 
     print('\nCities added, generating DataFrames and calculating Heights.\n')
     for city in tqdm(netzwerke):
-        network = netzwerke[city]
-        df_linien = da.utils.generate_df(network)
-        df_linien.reset_index(inplace=True)
-        #df_linien.to_feather('./Auswertung/Networks/%s.feather' % city)
-        df_linien.to_csv(path_or_buf='%s%s/osm/processed.csv' % (data_path, city), index=False)
+        if not os.path.exists('%s%s/osm/processed.csv' % (data_path, city)):
+            network = netzwerke[city]
+            df_linien = da.utils.generate_df(network, generate_heights=True)
+            df_linien.reset_index(inplace=True)
+            #df_linien.to_feather('./Auswertung/Networks/%s.feather' % city)
+            df_linien.to_csv(path_or_buf='%s%s/osm/processed.csv' % (data_path, city), index=False)
 
-    return netzwerke
+    return None
 
 if __name__ == "__main__":
     logging.basicConfig(filename='myapp.log', level=logging.WARNING)
@@ -217,7 +180,7 @@ if __name__ == "__main__":
     #
     #     for j in network.railway_lines:
     #         try:
-    #             curv = max(j.gamma) / (max(j.s) / 1000) #TODO: Muss in Auswertung korrigiert werden!
+    #             curv = max(j.gamma) / (max(j.s) / 1000)
     #             curvature_angular.append(curv)
     #             dist.append(max(j.s) / 1000)
     #
