@@ -189,7 +189,7 @@ def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, ignore_line_number: bo
 
 def main(data_dict: str, city: str, ignore_line_number: bool = False):
     gtfs = pd.read_csv('%s%s/timetable/results/trip_speeds_route_direction.csv' % (data_dict, city))
-    osm = extract_lines(pd.read_csv('%s%s/osm/processed.csv' % (data_dict, city)))
+    osm = extract_lines(pd.read_csv('%s%s/osm/processed.csv' % (data_dict, city), dtype={'Nummer':'string'}))
     match_gtfs_on_osm(osm=osm, gtfs=gtfs, filepath='%s%s/station_matching.csv' % (data_dict, city))
     new = merge_osm_gtfs(osm=osm, gtfs=gtfs, ignore_line_number= ignore_line_number)
     return new
@@ -197,5 +197,6 @@ def main(data_dict: str, city: str, ignore_line_number: bool = False):
 
 if __name__ == '__main__':
     data_dict = './data/'
-    city = 'prag'
+    city = 'lviv'
     main(data_dict, city)
+
