@@ -129,6 +129,46 @@ def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inli
     return matching_dict
 
 
+def match_gtfs_on_osm_alt(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inline: bool = True) -> dict:
+    try:
+        df = pd.read_csv(filepath_or_buffer=filepath)
+        matching_dict = dict(df.to_dict(orient='tight')['data'])
+
+    except FileNotFoundError:
+        matching_dict = dict()
+
+    osm_first_stops_for_gtfs = list()
+    osm_last_stops_for_gtfs = list()
+
+    for idx, line in gtfs.iterrows():
+        gtfs_first_stop = line['first_stop_name']
+        gtfs_last_stop = line['last_stop_name']
+
+        try:
+            osm_first_stops_for_gtfs.append(matching_dict[gtfs_first_stop])
+        except KeyError:
+            gtfs_new, osm_new = match_station(single=gtfs_first_stop, multiple=osm['from'].unique().tolist())
+            matching_dict[gtfs_new] = osm_new
+            osm_first_stops_for_gtfs.append(gtfs_new)
+
+
+
+        try:
+            osm_last_stops_for_gtfs.append(matching_dict[gtfs_last_stop])
+        except KeyError:
+            gtfs_new, osm_new = match_station(single=gtfs_last_stop, multiple=osm['to'].unique().tolist())
+            matching_dict[gtfs_new] = osm_new
+            osm_last_stops_for_gtfs.append(gtfs_new)
+
+
+    if inline:
+        gtfs['osm_first_stop_name'] = osm_first_stops_for_gtfs
+        gtfs['osm_last_stop_name'] = osm_last_stops_for_gtfs
+
+    pd.DataFrame.from_dict(data=matching_dict, orient='index').to_csv(path_or_buf=filepath)
+
+    return matching_dict
+
 def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, ignore_line_number: bool = False) -> pd.DataFrame:
 
     if ignore_line_number:
