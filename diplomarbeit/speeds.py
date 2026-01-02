@@ -203,7 +203,7 @@ def calc_speeds(path_to_gtfs):
             # Füge trip_id und Durchschnittsgeschwindigkeit dem DataFrame hinzu
             # df = pd.concat([df, pd.DataFrame({'trip_id': [trip_id], 'trip_speed': [trip_speed]})], ignore_index=True)#, 'first_stop_id': [first_stop_id], 'last_stop_id': [last_stop_id]})], ignore_index=True)
 
-        df = pd.DataFrame(data=data_df, columns=['trip_id', 'trip_speed', 'first_stop_id', 'last_stop_id', 'first_stop_name', 'last_stop_name'])
+        df = pd.DataFrame(data=data_df, columns=['trip_id', 'trip_speed', 'first_stop_id', 'last_stop_id', 'first_stop_name', 'last_stop_name', 'delta_dist', 'total_time'])
 
 
         # Füge die Spalte 'route_short_name' zum DataFrame hinzu
@@ -215,9 +215,10 @@ def calc_speeds(path_to_gtfs):
 
         # Gruppierung nach route_short_name und direction_id durchführen und Durchschnittsgeschwindigkeit berechnen
         # FF Gruppierung außerdem nach 1. und letzter Station - dadurch Kurzführungen erkennbar
-        print(f"Berechne die Durchschnittsgeschwindigkeiten pro route_short_name und direction_id...")
+        # FF: Berechnung Haltestellenabstand
+        print(f"Berechne die Durchschnittsgeschwindigkeiten und durchschnittlichen Haltestellenabstand pro route_short_name und direction_id...")
 
-        grouped = df.groupby(['route_short_name', 'direction_id', 'first_stop_name', 'last_stop_name'])
+        grouped = df.groupby(['route_short_name', 'direction_id', 'first_stop_name', 'last_stop_name'])#,'first_stop_id', 'last_stop_id'])
 
         data_df=[]
 
@@ -239,13 +240,27 @@ def calc_speeds(path_to_gtfs):
                        'direction_id': name[1],
                        'avg_speed': avg_speed,
                        'first_stop_name':name[2],
+                       #'first_stop_id': name[4],
                        'last_stop_name':name[3],
-                       'number_trips': number_trips}
+                       #'last_stop_id': name[5],
+                       'number_trips': number_trips,
+                       'avg_dist': avg_dist,
+                       'avg_time': avg_time}
+
             #first_stop_name = stops[data_dict['first_stop_id']]
             #last_stop_name = stops[data_dict['last_stop_id']]
-            data_df.append((data_dict['route_short_name'],data_dict['direction_id'],data_dict['avg_speed'], data_dict['first_stop_name'], data_dict['last_stop_name'], data_dict['number_trips']))
+            data_df.append((data_dict['route_short_name'],
+                            data_dict['direction_id'],
+                            data_dict['avg_speed'],
+                            data_dict['first_stop_name'],
+                            #data_dict['first_stop_id'],
+                            data_dict['last_stop_name'],
+                            #data_dict['last_stop_id'],
+                            data_dict['number_trips'],
+                            data_dict['avg_dist'],
+                            data_dict['avg_time']))
 
-        df1 = pd.DataFrame(data=data_df, columns=['route_short_name','direction_id', 'trip_speed', 'first_stop_name', 'last_stop_name', 'number_trips'])
+        df1 = pd.DataFrame(data=data_df, columns=['route_short_name','direction_id', 'trip_speed', 'first_stop_name', 'last_stop_name', 'number_trips', 'avg_dist', 'avg_time'])
 
         # Sortieren nach route_short_name
         ## FF Sortierung verbessert
@@ -265,8 +280,7 @@ def calc_speeds(path_to_gtfs):
 
         # Schreibe den DataFrame in eine Excel-Datei
         print(f"Schreibe Excel...")
-        if not os.path.exists(path_to_gtfs + 'results'):
-            os.makedirs(path_to_gtfs + 'results')
+        os.makedirs(path_to_gtfs + 'results', exist_ok=True)
         #df1_sorted.to_excel(path_to_gtfs + 'results/sorted_trip_speeds_route_direction' + str(datetime.now().strftime('_%d_%m_%Y')) + '.xlsx', index=False)
         #df1_sorted.to_latex(path_to_gtfs + 'results/trip_speeds_route_direction' + str(datetime.now().strftime('_%d_%m_%Y')) + '.tex', index=False)
 
@@ -276,7 +290,7 @@ def calc_speeds(path_to_gtfs):
 ### FF: Add function calls:
 if __name__ == "__main__":
     start = time.time()
-    gtfs_path = "./data/roma/timetable/"
+    gtfs_path = "./data/berlin/timetable/"
     calc_speeds(path_to_gtfs= gtfs_path)
     stop = time.time()
     print(f"Took: %s to run" %(str(stop-start)))
