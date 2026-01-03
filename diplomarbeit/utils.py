@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def get_nominatim_bounding_box(query):     # Nominatim-Url
     url = "https://nominatim.openstreetmap.org/search"
-    headers = {'User-agent': 'Mozilla/5.0'}
+    headers = {'User-agent': 'Diplomarbeit_Trams/1.0'}
 
     # Parameter
     parameters = {
