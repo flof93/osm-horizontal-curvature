@@ -126,18 +126,20 @@ def download_buildings_along_lines(agg_gdf: gpd.GeoDataFrame, data_path: str = '
     # return dl_info[['geometry', 'Stadt', 'line_name']]
 
 
-def download_buildings_bbox(data_path: str, filename: str = 'cities.csv'):
+def download_buildings_bbox(data_path: str, filename: str = 'cities.csv', force_download: bool = False):
     data = pd.read_csv(data_path + filename, sep=';')
     print('Downloading Building Data')
     for idx, row in data.iterrows():
-        print(ox.utils.ts(), '-', row['Stadt'])
-        #bbox = (float(row['West']), float(row['Sued']), float(row['Ost']), float(row['Nord']))
-        bbox = shp.box(float(row['West']), float(row['Sued']), float(row['Ost']), float(row['Nord']))
-        bbox_enl = ox.utils_geo.buffer_geometry(bbox, data['Buffer_Width'].max())
-        payload = ox.features_from_bbox(bbox=shp.total_bounds(bbox_enl), tags={'building': True})
         city = row['machine_readable']
-        data_to_save = payload[payload['geometry'].type.isin({"Polygon", "MultiPolygon"})]['geometry']
-        data_to_save.to_file(filename=data_path + city + '/buildings/city_buildings.json')
+        if force_download or not os.path.exists(data_path + city + '/buildings/city_buildings.json'):
+            print(ox.utils.ts(), '-', row['Stadt'])
+            #bbox = (float(row['West']), float(row['Sued']), float(row['Ost']), float(row['Nord']))
+            bbox = shp.box(float(row['West']), float(row['Sued']), float(row['Ost']), float(row['Nord']))
+            bbox_enl = ox.utils_geo.buffer_geometry(bbox, data['Buffer_Width'].max())
+            payload = ox.features_from_bbox(bbox=shp.total_bounds(bbox_enl), tags={'building': True})
+            city = row['machine_readable']
+            data_to_save = payload[payload['geometry'].type.isin({"Polygon", "MultiPolygon"})]['geometry']
+            data_to_save.to_file(filename=data_path + city + '/buildings/city_buildings.json')
 
 
 def process_city(city, data, data_path):
@@ -193,7 +195,7 @@ if __name__ == '__main__':
     data = gpd.read_file(data_dict + 'results.json')
     #data = data[data['Stadt']=='Berlin']
 
-    #download_buildings_bbox(data_path=data_dict)
+    download_buildings_bbox(data_path=data_dict)
     #agg_gdf = make_download_gdf_poly(gdf=data, width='Buffer_Width')
     #agg_gdf = make_download_gdf_bbox(gdf=data, width='Buffer_Width')
     #download_buildings_along_lines(agg_gdf=agg_gdf)
