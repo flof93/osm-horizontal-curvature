@@ -49,11 +49,14 @@ def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_time
 
 if __name__ == '__main__':
     data_dict = './data/'
+    #da.utils.cleanup_input(data_dict)
+
 
     data = make_whole_dataframe(data_dict= data_dict, calc_times=False)
     data.to_csv(data_dict+'results.csv')
     data.to_file(filename=data_dict+'results.json')
 
+    da.buildings.download_buildings_bbox(data_path=data_dict)
     da.buildings.calc_main(data_dict=data_dict)
 
     # data = pd.read_csv(data_dict+'results.csv') # Backuplösung, falls gpd nicht funktioniert
