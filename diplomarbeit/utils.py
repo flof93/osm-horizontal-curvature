@@ -274,3 +274,4 @@ def make_folders(data_path: str, city: str) -> None:
     os.makedirs(data_path + city + '/osm', exist_ok=True)
     os.makedirs(data_path + city + '/timetable', exist_ok=True)
     os.makedirs(data_path + city + '/buildings', exist_ok=True)
+    os.makedirs(data_path + city + '/results', exist_ok=True)

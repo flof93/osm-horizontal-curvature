@@ -104,7 +104,7 @@ if __name__ == '__main__':
         fx = model.predict(X=x)
         ax[1].plot(x[:, 0], fx, c="red")
         ax[1].set_xlabel('Durchschnittlicher\nHaltestellenabstand [m]')
-        plt.savefig(fname=data_dict+i+'/corr.png')
+        plt.savefig(fname=data_dict+i+'/results/corr.png')
         plt.close()
 
 
