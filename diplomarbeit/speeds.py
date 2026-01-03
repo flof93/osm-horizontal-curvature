@@ -41,7 +41,10 @@ def calc_speeds(path_to_gtfs):
         "block_id": "string",
         "shape_id": "string",
         "wheelchair_accessible": "Int64",
-        "bikes_allowed": "Int64"
+        "bikes_allowed": "Int64",
+        "ext_id": "string",
+        "brigade": "string",
+        "fleet_type": "string",
     })
 
     stop_times_dtypes={
