@@ -14,7 +14,7 @@ def match_station(single: str, multiple: list) -> Tuple[str, str]:
 
     scores_list: list = []
     for i in multiple:
-        score = difflib.SequenceMatcher(a=i, b=single).ratio()
+        score = difflib.SequenceMatcher(a=i.lower(), b=single.lower()).ratio()
         scores_list.append((score, i))
 
     scores_list.sort(reverse=True)
