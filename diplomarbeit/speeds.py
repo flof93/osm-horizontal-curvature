@@ -221,9 +221,9 @@ def calc_speeds(path_to_gtfs):
         # Gruppierung nach route_short_name und direction_id durchführen und Durchschnittsgeschwindigkeit berechnen
         # FF Gruppierung außerdem nach 1. und letzter Station - dadurch Kurzführungen erkennbar
         # FF: Berechnung Haltestellenabstand
-        print(f"Berechne die Durchschnittsgeschwindigkeiten und durchschnittlichen Haltestellenabstand pro route_short_name und direction_id...")
+        print(f"Berechne die Durchschnittsgeschwindigkeiten und durchschnittlichen Haltestellenabstand pro route_short_name und Start-Ziel-Relation")#direction_id...")
 
-        grouped = df.groupby(['route_short_name', 'direction_id', 'first_stop_name', 'last_stop_name'])#,'first_stop_id', 'last_stop_id'])
+        grouped = df.groupby(['route_short_name', 'first_stop_name', 'last_stop_name'])#'direction_id','first_stop_id', 'last_stop_id'])
 
         data_df=[]
 
@@ -242,11 +242,11 @@ def calc_speeds(path_to_gtfs):
 
             # Füge die Informationen zu dieser Gruppe (route_short_name, direction_id und Durchschnittsgeschwindigkeit) dem DataFrame hinzu
             data_dict={'route_short_name': name[0],
-                       'direction_id': name[1],
+                       #'direction_id': name[1],
                        'avg_speed': avg_speed,
-                       'first_stop_name':name[2],
+                       'first_stop_name':name[1],
                        #'first_stop_id': name[4],
-                       'last_stop_name':name[3],
+                       'last_stop_name':name[2],
                        #'last_stop_id': name[5],
                        'number_trips': number_trips,
                        'avg_dist': avg_dist,
@@ -255,7 +255,7 @@ def calc_speeds(path_to_gtfs):
             #first_stop_name = stops[data_dict['first_stop_id']]
             #last_stop_name = stops[data_dict['last_stop_id']]
             data_df.append((data_dict['route_short_name'],
-                            data_dict['direction_id'],
+                            #data_dict['direction_id'],
                             data_dict['avg_speed'],
                             data_dict['first_stop_name'],
                             #data_dict['first_stop_id'],
@@ -265,7 +265,7 @@ def calc_speeds(path_to_gtfs):
                             data_dict['avg_dist'],
                             data_dict['avg_time']))
 
-        df1 = pd.DataFrame(data=data_df, columns=['route_short_name','direction_id', 'trip_speed', 'first_stop_name', 'last_stop_name', 'number_trips', 'avg_dist', 'avg_time'])
+        df1 = pd.DataFrame(data=data_df, columns=['route_short_name','trip_speed', 'first_stop_name', 'last_stop_name', 'number_trips', 'avg_dist', 'avg_time']) #'direction_id',
 
         # Sortieren nach route_short_name
         ## FF Sortierung verbessert
