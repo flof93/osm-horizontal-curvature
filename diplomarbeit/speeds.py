@@ -272,7 +272,7 @@ def calc_speeds(path_to_gtfs):
         #num_df = df1[pd.to_numeric(df1['route_short_name'], errors='coerce').notnull()]  # wählt numerische Werte aus
         #str_df = df1[pd.to_numeric(df1['route_short_name'], errors='coerce').isnull()]  # wählt nicht-numerische Werte aus
         df1_sorted = df1.sort_values(
-            by=['route_short_name', 'direction_id']).reset_index(
+            by=['route_short_name']).reset_index( #, 'direction_id'
             drop=True)  # sortiert numerische Werte
         #df1_sorted.drop(columns=['trip_id'], inplace=True)
 
