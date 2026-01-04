@@ -19,6 +19,8 @@ from osmnx.utils import ts
 
 import gtfs_kit as gk
 
+from math import ceil
+
 logger = logging.getLogger(__name__)
 
 
@@ -275,3 +277,7 @@ def make_folders(data_path: str, city: str) -> None:
     os.makedirs(data_path + city + '/timetable', exist_ok=True)
     os.makedirs(data_path + city + '/buildings', exist_ok=True)
     os.makedirs(data_path + city + '/results', exist_ok=True)
+
+def round_up(n: float, decimals: int =0) -> float:
+    multiplier = 10**decimals
+    return ceil(n * multiplier) / multiplier
