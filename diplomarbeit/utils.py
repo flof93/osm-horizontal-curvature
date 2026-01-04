@@ -6,7 +6,7 @@ import zipfile
 import io
 import os
 
-import diplomarbeit.buildings
+from .buildings import *
 from curvy.utils import OSMRailwayLine
 import curvy
 import pandas as pd

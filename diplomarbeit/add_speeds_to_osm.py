@@ -40,7 +40,7 @@ def match_station(single: str, multiple: list) -> Tuple[str, str]:
                 answer = input('Bitte passende Station für %s wählen ([M] für mehr Stationen, [X] für keine der Möglichkeiten): ' % single)
 
             if answer.lower() == 'x':
-                return single, np.NaN
+                return single, np.nan
             elif answer.lower() == 'm':
                 thresh -= 0.2
                 continue
@@ -108,7 +108,7 @@ def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inli
                 matching_dict[osm_new] = gtfs_new
                 osm_first_stops_for_gtfs.append(gtfs_new)
         else:
-            osm_first_stops_for_gtfs.append(np.NaN)
+            osm_first_stops_for_gtfs.append(np.nan)
 
         if pd.notna(osm_last_stop):
             try:
@@ -118,7 +118,7 @@ def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inli
                 matching_dict[osm_new] = gtfs_new
                 osm_last_stops_for_gtfs.append(gtfs_new)
         else:
-            osm_last_stops_for_gtfs.append(np.NaN)
+            osm_last_stops_for_gtfs.append(np.nan)
 
     if inline:
         osm['gtfs_first_stop_name'] = osm_first_stops_for_gtfs
