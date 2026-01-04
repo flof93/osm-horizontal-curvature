@@ -60,8 +60,8 @@ def extract_lines(network: pd.DataFrame) -> gpd.GeoDataFrame:
     for name, group in grouped:
         distance = group['Distanz'].max() / 1000
         curvature = group['Winkel'].max() / distance
-        aufstieg = group['Aufstieg'].max()
-        abstieg = group['Abstieg'].max() #Todo: Normieren über Streckenlänge
+        aufstieg = group['Aufstieg'].max() / distance
+        abstieg = group['Abstieg'].max() / distance
         geom_list = [list(x) for x in zip(group['Longitude'], group['Latitude'])]
         try:
             geometry = shp.LineString(coordinates=geom_list)
