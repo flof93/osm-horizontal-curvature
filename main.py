@@ -47,6 +47,21 @@ def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_time
 
     return full_data
 
+def add_subplot(data: pd.DataFrame, x: tuple[str, str], y: tuple[str, str], subaxis: int, axs: plt.Axes) -> None:
+    model = LinearRegression(fit_intercept=True)
+    data_unabh = data[[x[0]]]
+    model.fit(X=data_unabh, y=data[y[0]])
+
+    data.plot.scatter(x=x[0], y=y[0], ax=axs[subaxis])  # , marker='x', s=10, c="navy")
+    x_between = np.linspace(data_unabh.min(), data_unabh.max(), 1000)
+    fx = model.predict(X=x_between)
+    axs[subaxis].plot(x_between[:, 0], fx, c="red")
+    axs[subaxis].set_xlabel(x[1])
+    axs[subaxis].set_ylabel(y[1])
+    return None
+
+
+
 if __name__ == '__main__':
     data_dict = './data/'
     #da.utils.cleanup_input(data_dict)
@@ -79,35 +94,33 @@ if __name__ == '__main__':
 
     sns.set_style('darkgrid')
 
+    x_axis = [('curvature', 'Durchschnittliche\nKurvigkeit [gon/km]'),
+             ('avg_dist', 'Durchschnittlicher\nHaltestellenabstand [m]'),
+             ('height_up', 'Durchschnittlicher\nAufstieg [m/km]'),
+             ('rho_b', 'Bebauungsdichte'),
+              ]
+
+    y_axis = [('trip_speed','Durchschnittliche\nLiniengeschwindigkeit [km/h]'),
+              ]
+
     for i in data['city'].unique():
         city_data = data[data['city']==i]
 
-        model = LinearRegression(fit_intercept=True)
-        data_unabh = city_data[['curvature']]
-        model.fit(X=data_unabh, y=city_data['trip_speed'])
-
-        fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
-        ax[0].set_ylim(0,40)
-
-
+        fig, axs = plt.subplots(nrows=1, ncols=len(x_axis), sharey=True, figsize=(40,10))
         fig.suptitle(city_data['Stadt'].unique()[0], fontsize=16)
 
-        city_data.dropna(axis='rows').plot.scatter(x='curvature', y='trip_speed', ax=ax[0])#, marker='x', s=10, c="navy")
-        x = np.linspace(data_unabh.min(), data_unabh.max(), 1000)
-        fx = model.predict(X=x)
-        ax[0].plot(x[:, 0], fx, c="red")
-        ax[0].set_xlabel('Durchschnittliche\nKurvigkeit [gon/km]')
-        ax[0].set_ylabel('Durchschnittliche\nLiniengeschwindigkeit [km/h]')
+        axs[0].set_ylim(0, 40)
 
-        data_unabh = city_data[['avg_dist']]
-        model.fit(X=data_unabh, y=city_data['trip_speed'])
+        for j in range(len(x_axis)):
+            max = data.dropna(axis='rows')[x_axis[j][0]].max()
+            if max < 1:
+                axs[j].set_xlim(0, da.utils.round_up(max, 1))
+            else:
+                axs[j].set_xlim(0, da.utils.round_up(max, -1))
 
-        city_data.dropna(axis='rows').plot.scatter(x='avg_dist', y='trip_speed', ax=ax[1])#, marker='x', s=10, c="navy")
-        x = np.linspace(data_unabh.min(), data_unabh.max(), 1000)
-        fx = model.predict(X=x)
-        ax[1].plot(x[:, 0], fx, c="red")
-        ax[1].set_xlabel('Durchschnittlicher\nHaltestellenabstand [m]')
-        plt.savefig(fname=data_dict+i+'/results/corr.png')
+            add_subplot(data=city_data.dropna(axis='rows'), x=x_axis[j], y=y_axis[0], subaxis=j, axs=axs)
+
+        plt.savefig(fname=data_dict+i+'/results/corr.png', bbox_inches='tight', pad_inches=0.2)
         plt.close()
 
 
