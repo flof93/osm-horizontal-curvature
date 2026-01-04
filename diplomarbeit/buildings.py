@@ -126,7 +126,7 @@ def download_buildings_along_lines(agg_gdf: gpd.GeoDataFrame, data_path: str = '
     # return dl_info[['geometry', 'Stadt', 'line_name']]
 
 
-def download_buildings_bbox(data_path: str, filename: str = 'cities.csv', force_download: bool = False):
+def download_buildings_bbox(data_path: str, filename: str = 'cities.csv', force_download: bool = False) -> None:
     data = pd.read_csv(data_path + filename, sep=';')
     print('Downloading Building Data')
     for idx, row in data.iterrows():
