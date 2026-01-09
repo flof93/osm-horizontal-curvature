@@ -51,13 +51,15 @@ def add_subplot(data: pd.DataFrame, x: tuple[str, str], y: tuple[str, str], suba
     model = LinearRegression(fit_intercept=True)
     data_unabh = data[[x[0]]]
     model.fit(X=data_unabh, y=data[y[0]])
-
-    data.plot.scatter(x=x[0], y=y[0], ax=axs[subaxis])  # , marker='x', s=10, c="navy")
     x_between = np.linspace(data_unabh.min(), data_unabh.max(), 1000)
     fx = model.predict(X=x_between)
-    axs[subaxis].plot(x_between[:, 0], fx, c="red")
+    r_square=model.score(X=data_unabh, y=data[y[0]])
+
+    data.plot.scatter(x=x[0], y=y[0], ax=axs[subaxis])  # , marker='x', s=10, c="navy")
+    axs[subaxis].plot(x_between[:, 0], fx, c="red", label="y={0:.4f}x+{1:.2f}\nR²={2:.2f}".format(model.coef_[0] ,model.intercept_, r_square))
     axs[subaxis].set_xlabel(x[1])
     axs[subaxis].set_ylabel(y[1])
+    axs[subaxis].legend()
     return None
 
 
@@ -92,6 +94,9 @@ if __name__ == '__main__':
     # )
     # plt.show()
 
+    #plt.rc('text', usetex=True)
+    #plt.rc('font', family='serif')
+    # Würde gehen mit r'Dieser Text als label, etx'
     sns.set_style('darkgrid')
 
     x_axis = [('curvature', 'Durchschnittliche\nKurvigkeit [gon/km]'),
@@ -106,19 +111,19 @@ if __name__ == '__main__':
     for i in data['city'].unique():
         city_data = data[data['city']==i]
 
-        fig, axs = plt.subplots(nrows=1, ncols=len(x_axis), sharey=True, figsize=(40,10))
-        fig.suptitle(city_data['Stadt'].unique()[0], fontsize=16)
+        fig, axs = plt.subplots(nrows=1, ncols=len(x_axis), sharey=True, figsize=(len(x_axis)*5,5))
+        #fig.suptitle(city_data['Stadt'].unique()[0], fontsize=16)
 
         axs[0].set_ylim(0, 40)
 
         for j in range(len(x_axis)):
-            max = data.dropna(axis='rows')[x_axis[j][0]].max()
+            max = data.dropna(axis='index')[x_axis[j][0]].max()
             if max < 1:
                 axs[j].set_xlim(0, da.utils.round_up(max, 1))
             else:
                 axs[j].set_xlim(0, da.utils.round_up(max, -1))
 
-            add_subplot(data=city_data.dropna(axis='rows'), x=x_axis[j], y=y_axis[0], subaxis=j, axs=axs)
+            add_subplot(data=city_data, x=x_axis[j], y=y_axis[0], subaxis=j, axs=axs)
 
         plt.savefig(fname=data_dict+i+'/results/corr.png', bbox_inches='tight', pad_inches=0.2)
         plt.close()
@@ -130,6 +135,9 @@ if __name__ == '__main__':
 
     print("Corr curv/speed", data['curvature'].corr(data['trip_speed'], method='pearson'))
     print("Corr dist/speed", data['avg_dist'].corr(data['trip_speed'], method='pearson'))
+    print("Corr dist/rho_b", data['avg_dist'].corr(data['rho_b'], method='pearson'))
+
+
 
 
 
@@ -150,7 +158,7 @@ if __name__ == '__main__':
     data_unabh = data[['curvature']]
     model.fit(X=data_unabh, y=data['trip_speed'])
 
-    sns.scatterplot(data= data, x='curvature', y='trip_speed', ax=ax[0], hue="Stadt")
+    sns.scatterplot(data= data, x='curvature', y='trip_speed', ax=ax[0])#, hue="Stadt")
     x = np.linspace(data_unabh.min(), data_unabh.max(), 1000)
     fx = model.predict(X=x)
     ax[0].plot(x[:, 0], fx, c="red")
@@ -173,7 +181,7 @@ if __name__ == '__main__':
     print("d:", model.intercept_)
     print("R²: ", model.score(X=data_unabh, y=data['trip_speed']))
 
-    sns.scatterplot(data=data, x='avg_dist', y='trip_speed',  ax=ax[1], hue="Stadt")
+    sns.scatterplot(data=data, x='avg_dist', y='trip_speed',  ax=ax[1])#, hue="Stadt")
     x = np.linspace(data_unabh.min(), data_unabh.max(), 1000)
     fx = model.predict(X=x)
     ax[1].plot(x[:, 0], fx, c="red")
@@ -189,6 +197,12 @@ if __name__ == '__main__':
 
     columns=['curvature', 'avg_dist', 'trip_speed', 'height_up', 'height_down', 'rho_b']
     df_draw = data.dropna(axis='rows', subset=columns)[columns]
+    df_draw.rename(columns={'curvature':'Kurvigkeit [gon/km]',
+                            'avg_dist':'Durchschnittlicher\nHaltestellenabstand [m]',
+                            'trip_speed':'Durchschnittsgeschwindigkeit [km/h]',
+                            'height_up': 'Aufstieg [m/km]',
+                            'height_down': 'Abstieg [m/km]',
+                            'rho_b':'Bebauungsdichte [-]'}, inplace=True)
     sns.set_style('darkgrid')
 
     g = sns.PairGrid(data=df_draw, diag_sharey=False)
