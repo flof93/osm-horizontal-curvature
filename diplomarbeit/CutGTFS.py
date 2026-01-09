@@ -131,7 +131,7 @@ def read_gtfs_file(path_or_zipfile, name):
     try:
         return pd.read_csv(path_or_zipfile, dtype=dtype)
     except Exception as e:
-        print(f"⚠️ Error reading {name}: {e}")
+        print(f"Error reading {name}: {e}")
         return pd.DataFrame()
 
 def split_gtfs_by_agency(gtfs_path, output_dir):
@@ -225,7 +225,7 @@ def split_gtfs_by_agency(gtfs_path, output_dir):
                         df.to_csv(buffer, index=False)
                         outzip.writestr(name, buffer.getvalue())
 
-        print(f"✅ Created {out_path}")
+        print(f"Created {out_path}")
 
     print("All done!")
 
