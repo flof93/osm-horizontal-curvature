@@ -145,3 +145,4 @@ Pickles/
 *.pickle
 /Durchschnittsgeschwindigkeit/data/
 /data
+/cache
