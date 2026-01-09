@@ -210,3 +210,13 @@ if __name__ == '__main__':
     g.map_lower(sns.kdeplot)
     g.map_diag(sns.kdeplot, lw=2)
     plt.show()
+
+    print('Korellationsmatrix:')
+    matrix=df_draw.corr()
+    print(matrix)
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(matrix, annot=True, cmap="coolwarm", fmt=".3f", linewidths=0.5, vmin=-1, vmax=1)
+    plt.title("Correlation Heatmap")
+    plt.show()
+
