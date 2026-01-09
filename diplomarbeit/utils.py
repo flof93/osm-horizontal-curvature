@@ -77,7 +77,7 @@ def get_bounding_box(query:str, data_path:str, osm_name:str):
     if os.path.exists(data_path + query + '/timetable/shapes.txt'):
         gtfs_bbox = get_gtfs_bounding_box(data_path + query + '/timetable/')
     else:
-        gtfs_bbox = [np.NaN,np.NaN,np.NaN,np.NaN]
+        gtfs_bbox = [np.nan,np.nan,np.nan,np.nan]
 
     south = min(nominatim_bbox[0], gtfs_bbox[0])
     north = max(nominatim_bbox[1], gtfs_bbox[1])
@@ -95,8 +95,8 @@ def get_heights(lat: list, lon: list) -> list:
 
     if len(lat) != len(lon):
         raise AssertionError('Latitude and Longitude have to be the same length')
-    elif lat == [np.NaN] or lon == [np.NaN]:
-        return [np.NaN]
+    elif lat == [np.nan] or lon == [np.nan]:
+        return [np.nan]
 
     for i in range(len(lat)):
         list_of_points.append(
@@ -128,15 +128,15 @@ def generate_df(curvy: curvy.Curvy, generate_heights: bool = True) -> pd.DataFra
         d : dict = {
             'Linie': getattr(line, 'name') if hasattr(line, 'name') else '',
             'Nummer': getattr(line, 'ref') if hasattr(line, 'ref') else '',
-            'Distanz': line.s if len(line.s)>0 else [np.NaN],
-            'x': line.x if len(line.x)>0 else [np.NaN],
-            'y': line.y if len(line.y)>0 else [np.NaN],
-            'Latitude': [float(i) for i in line.lat] if len(line.lat)>0 else [np.NaN],
-            'Longitude': [float(i) for i in line.lon] if len(line.lon)>0 else [np.NaN],
-            'd_Winkel': line.dgamma if len(line.dgamma)>0 else [np.NaN],
-            'Winkel': line.gamma if len(line.gamma)>0 else [np.NaN],
-            'Krümmung': line.c if len(line.c)>0 else [np.NaN],
-            'Gauge': int(line.ways[0].tags['gauge']) if len(line.ways) > 0 and 'gauge' in line.ways[0].tags and line.ways[0].tags['gauge'].isnumeric() else np.NaN,
+            'Distanz': line.s if len(line.s)>0 else [np.nan],
+            'x': line.x if len(line.x)>0 else [np.nan],
+            'y': line.y if len(line.y)>0 else [np.nan],
+            'Latitude': [float(i) for i in line.lat] if len(line.lat)>0 else [np.nan],
+            'Longitude': [float(i) for i in line.lon] if len(line.lon)>0 else [np.nan],
+            'd_Winkel': line.dgamma if len(line.dgamma)>0 else [np.nan],
+            'Winkel': line.gamma if len(line.gamma)>0 else [np.nan],
+            'Krümmung': line.c if len(line.c)>0 else [np.nan],
+            'Gauge': int(line.ways[0].tags['gauge']) if len(line.ways) > 0 and 'gauge' in line.ways[0].tags and line.ways[0].tags['gauge'].isnumeric() else np.nan,
             #'Gauge':
             'From': getattr(line, 'from') if hasattr(line, 'from') else '',
             'To': getattr(line, 'to') if hasattr(line, 'to') else ''
@@ -256,7 +256,7 @@ def cleanup_input(data_path: str, filename: str = 'cities.csv', recalculate: boo
             nord.append(row['Nord'])
 
         if pd.isna(row['Buffer_Width']):
-            buffer.append(diplomarbeit.buildings.calculate_buffer_width(row['OSM-Name']))
+            buffer.append(calculate_buffer_width(row['OSM-Name']))
         else:
             buffer.append(row['Buffer_Width'])
 
