@@ -165,9 +165,28 @@ class Curvy:
 
                 # Convert relation result to OSMRailwayLine objects
                 if rou_result.result:
+
                     for rel in rou_result.result.relations:
+
                         rel_way_ids = [mem.ref for mem in rel.members if
                                        type(mem) == overpy.RelationWay and not mem.role]
+
+                        tmp_g = nx.MultiGraph(crs=self.utm_proj.crs)
+                        tmp_g.add_nodes_from([(n.id, n.__dict__['attributes']) for n in self.nodes])
+                        rel_ways = [w for w in trk_result.result.ways if w.id in rel_way_ids]
+                        for w in rel_ways:
+                            tmp_edges = [(n1.id, n2.id, (float(n1.lon), float(n1.lat), float(n2.lon), float(n2.lat))[2])
+                                     for n1, n2 in zip(w.nodes, w.nodes[1:])]
+                            tmp_g.add_weighted_edges_from(tmp_edges, weight="d", way_id=w.id)
+                        tmp_g=tmp_g.edge_subgraph(tmp_g.edges)
+
+                        rel_way_ids = list([n for n in sorted(nx.connected_components(tmp_g)) if len(n)>2][0]) # Filter out short sections (e.g. wrongly tagged platforms)
+                        ### TODO: SPINNT!!! Aktuell kommen hier Node-IDs und keine Way-Ids an!
+                        ### S = [tmp_g.subgraph(c).copy() for c in nx.connected_components(tmp_g)]
+                        ### S[0]
+                        ### list(nx.get_edge_attributes(S[0], 'way_id').values())
+
+                        # TODO: Filter out branches / sections which branch of at a switch
 
                         if trk_result.result:
                             rel_ways = [w for w in trk_result.result.ways if w.id in rel_way_ids]
@@ -194,6 +213,9 @@ class Curvy:
                     for i, xy in enumerate(osm_xy):
                         self.nodes[i].attributes["x"] = xy[0]
                         self.nodes[i].attributes["y"] = xy[1]
+
+
+
         else:
             logger.warning("Cant download OSM data because of not internet connection")
 
