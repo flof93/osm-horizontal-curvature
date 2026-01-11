@@ -154,7 +154,7 @@ class Curvy:
             # for u,v in gen:
             #     res.append((u,v))
 
-            for railway_type in tqdm(railway_types): #railway_type
+            for railway_type in tqdm(railway_types):
                 # Create Overpass queries and try downloading them
                 logger.info("Querying data for railway type: %s" % railway_type)
                 trk_query, rou_query = self._create_query(railway_type=railway_type, recurse=recurse)
