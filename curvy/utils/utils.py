@@ -1,6 +1,7 @@
 import random
 import socket
 from typing import Union
+import math
 
 import numpy as np
 
@@ -62,4 +63,15 @@ def poly_quadratic(x: np.ndarray, a: float, b: float) -> np.ndarray:
 
     """
     return a * x ** 2 + b * x
+
+def convert_wgs_to_utm(lon: float, lat: float):
+    """Based on lat and lng, return best utm epsg-code"""
+    utm_band = str((math.floor((lon + 180) / 6 ) % 60) + 1)
+    if len(utm_band) == 1:
+        utm_band = '0'+utm_band
+    if lat >= 0:
+        epsg_code = 'EPSG:326' + utm_band
+        return epsg_code
+    epsg_code = 'EPSG:327' + utm_band
+    return epsg_code
 
