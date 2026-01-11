@@ -17,7 +17,7 @@ import pyproj
 from overpy import Result
 from tqdm.auto import tqdm
 
-from curvy.utils import QueryResult, internet
+from curvy.utils import QueryResult, internet, convert_wgs_to_utm
 from curvy.utils.osm import OSMRailwayLine
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class Curvy:
         self.lon_ne = lon_ne
         self.lat_ne = lat_ne
 
-        self.utm_proj = pyproj.Proj(proj='utm', zone=32, ellps='WGS84', preserve_units=True)
+        self.utm_proj = pyproj.Proj(convert_wgs_to_utm((self.lon_ne+self.lon_sw)/2, (self.lat_ne+self.lat_sw)/2)) #proj='utm', zone=32, ellps='WGS84', preserve_units=True)
         self.geod = pyproj.Geod(ellps='WGS84')
 
         self.desired_railway_types = desired_railway_types
@@ -83,13 +83,13 @@ class Curvy:
         self.query_results = {rw_type: {"track_query": QueryResult,
                                         "route_query": QueryResult} for rw_type in self.desired_railway_types}
 
-        self.G = nx.MultiGraph()
+        self.G = nx.MultiDiGraph(crs=self.utm_proj.crs)
 
         if download:
             self.download_track_data(recurse=recurse)
 
             # Add nodes to Graph
-            self.G.add_nodes_from([(n.id, n.__dict__) for n in self.nodes])
+            self.G.add_nodes_from([(n.id, n.__dict__['attributes']) for n in self.nodes])
 
             # Add edges, use node distances as weight
             for w in self.ways:
