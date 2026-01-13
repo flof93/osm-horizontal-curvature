@@ -154,7 +154,7 @@ class Curvy:
             # for u,v in gen:
             #     res.append((u,v))
 
-            for railway_type in tqdm(railway_types):
+            for railway_type in tqdm(railway_types, desc= 'Downloading', position=1, colour='yellow'):
                 # Create Overpass queries and try downloading them
                 logger.info("Querying data for railway type: %s" % railway_type)
                 trk_query, rou_query = self._create_query(railway_type=railway_type, recurse=recurse)
@@ -162,38 +162,6 @@ class Curvy:
                 rou_result = QueryResult(self.query_overpass(rou_query), railway_type)
                 self.query_results[railway_type]["track_query"] = trk_result
                 self.query_results[railway_type]["route_query"] = rou_result
-
-                # Convert relation result to OSMRailwayLine objects
-                if rou_result.result:
-
-                    for rel in rou_result.result.relations:
-
-                        rel_way_ids = [mem.ref for mem in rel.members if
-                                       type(mem) == overpy.RelationWay and not mem.role]
-
-                        tmp_g = nx.MultiGraph(crs=self.utm_proj.crs)
-                        tmp_g.add_nodes_from([(n.id, n.__dict__['attributes']) for n in self.nodes])
-                        rel_ways = [w for w in trk_result.result.ways if w.id in rel_way_ids]
-                        for w in rel_ways:
-                            tmp_edges = [(n1.id, n2.id, (float(n1.lon), float(n1.lat), float(n2.lon), float(n2.lat))[2])
-                                     for n1, n2 in zip(w.nodes, w.nodes[1:])]
-                            tmp_g.add_weighted_edges_from(tmp_edges, weight="d", way_id=w.id)
-                        tmp_g=tmp_g.edge_subgraph(tmp_g.edges)
-
-                        rel_way_ids = list([n for n in sorted(nx.connected_components(tmp_g)) if len(n)>2][0]) # Filter out short sections (e.g. wrongly tagged platforms)
-                        ### TODO: SPINNT!!! Aktuell kommen hier Node-IDs und keine Way-Ids an!
-                        ### S = [tmp_g.subgraph(c).copy() for c in nx.connected_components(tmp_g)]
-                        ### S[0]
-                        ### list(nx.get_edge_attributes(S[0], 'way_id').values())
-
-                        # TODO: Filter out branches / sections which branch of at a switch
-
-                        if trk_result.result:
-                            rel_ways = [w for w in trk_result.result.ways if w.id in rel_way_ids]
-
-                            sort_order = {w_id: idx for w_id, idx in zip(rel_way_ids, range(len(rel_way_ids)))}
-                            rel_ways.sort(key=lambda w: sort_order[w.id])
-                            self.railway_lines.append(OSMRailwayLine(rel.id, rel_ways, rel.tags, rel.members))
 
                 if trk_result.result:
                     for n in trk_result.result.nodes:
@@ -213,6 +181,94 @@ class Curvy:
                     for i, xy in enumerate(osm_xy):
                         self.nodes[i].attributes["x"] = xy[0]
                         self.nodes[i].attributes["y"] = xy[1]
+
+                # Convert relation result to OSMRailwayLine objects
+                if rou_result.result:
+
+                    for rel in rou_result.result.relations:
+
+                        rel_way_ids = [mem.ref for mem in rel.members if
+                                       type(mem) == overpy.RelationWay and not mem.role]
+
+                        line_G = nx.MultiGraph(crs=self.utm_proj.crs)
+                        line_G.add_nodes_from([(n.id, n.__dict__['attributes']) for n in self.nodes])
+                        rel_ways = [w for w in trk_result.result.ways if w.id in rel_way_ids]
+                        for w in rel_ways:
+                            tmp_edges = [(n1.id, n2.id, self.geod.inv(float(n1.lon), float(n1.lat), float(n2.lon), float(n2.lat))[2])
+                                     for n1, n2 in zip(w.nodes, w.nodes[1:])]
+                            line_G.add_weighted_edges_from(tmp_edges, weight="d", way_id=w.id)
+                        line_G=line_G.edge_subgraph(line_G.edges) # Schneidet unbenutzte Nodes weg
+
+                        end_nodes = [pos_end_node for (pos_end_node, val) in line_G.degree if val==1]
+                        first_node = None
+                        end_nodes_line = []
+
+                        if len(end_nodes)>=2: # geschlossene Kreise werden wie vorher behandelt
+                            if not any([n.id in end_nodes for n in self.way_dict[rel_way_ids[0]].nodes]):
+                                logger.warning('Relation <%s> starts in the middle, ignoring this relation!' % rel.id)
+                                continue
+
+                            first_node = [n.id for n in self.way_dict[rel_way_ids[0]].nodes if n.id in end_nodes][0]
+
+                            end_nodes_line=[node for node in end_nodes if self.geod.inv(
+                                    float(self.node_dict[first_node].lon),
+                                    float(self.node_dict[first_node].lat),
+                                    float(self.node_dict[node].lon),
+                                    float(self.node_dict[node].lat))[2]>25] # If distance is more than 25m, endpoint is a valid endpoint.
+
+                        else:
+                            logger.warning("Relation <%s> has less than 2 Endpoints" % rel.id)
+
+                        if end_nodes_line and first_node:
+                            possible_paths = {}
+
+                            for last_node in end_nodes_line:
+                                try:
+                                    path = nx.shortest_path(line_G, first_node, last_node)
+                                    dist = nx.path_weight(line_G, path, 'd')
+                                    possible_paths[last_node] = [path, dist]
+                                except nx.NetworkXNoPath:
+                                    logger.warning("No path found for nodes: %s and %s" % (first_node, last_node))
+                                    continue
+                                except nx.NodeNotFound as e:
+                                    logger.exception('Exception %s in Relation <%s>!' % (e.args, rel.id))
+                                    raise e
+
+                            # Todo: Stitch longer parts (~100m) together at shortest gap
+                            try:
+                                chosen_node = max(possible_paths, key=possible_paths.get)
+                            except ValueError as e:
+                                logger.exception('No maximum distance possible, since no possible paths found! Relation: <%s>' % rel.id)
+                                raise e
+
+                            path = possible_paths[chosen_node][0]
+
+                            rel_way_ids = [attrs.get('way_id') for u, v in zip(path[:-1], path[1:]) for attrs in line_G[u][v].values()]
+                        elif not first_node:
+                            logger.warning(
+                                "Relation %s has no Startpoint!" % rel)
+                        else:
+                            logger.warning("Relation %s has no possible Endpoint (Distance to Start-Node < %s m)" % (rel,25))
+
+                        ### rel_way_ids = list([n for n in sorted(nx.connected_components(line_G)) if len(n)>2][0]) # Filter out short sections (e.g. wrongly tagged platforms)
+                        ### TODO: SPINNT!!! Aktuell kommen hier Node-IDs und keine Way-Ids an!
+                        ### S = [tmp_g.subgraph(c).copy() for c in nx.connected_components(tmp_g)]
+                        ### S[0]
+                        ### list(nx.get_edge_attributes(S[0], 'way_id').values())
+
+                        ### [(val,node) for (node, val) in tmp_g.degree() if val>2] Findet weichen im Netz
+                        ### [(val,node) for (node, val) in tmp_g.degree() if val==1] Findet Endpunkte im Netz
+
+                        # TODO: Filter out branches / sections which branch of at a switch
+
+                        if trk_result.result:
+                            rel_ways = [w for w in trk_result.result.ways if w.id in rel_way_ids]
+
+                            sort_order = {w_id: idx for w_id, idx in zip(rel_way_ids, range(len(rel_way_ids)))}
+                            rel_ways.sort(key=lambda w: sort_order[w.id])
+                            self.railway_lines.append(OSMRailwayLine(rel.id, rel_ways, rel.tags, rel.members))
+
+
 
 
 
