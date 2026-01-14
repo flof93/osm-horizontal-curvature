@@ -101,8 +101,8 @@ if __name__ == '__main__':
 
     x_axis = [('curvature', 'Durchschnittliche\nKurvigkeit [gon/km]'),
              ('avg_dist', 'Durchschnittlicher\nHaltestellenabstand [m]'),
-             ('height_up', 'Durchschnittlicher\nAufstieg [m/km]'),
-             ('rho_b', 'Bebauungsdichte'),
+             #('height_up', 'Durchschnittlicher\nAufstieg [m/km]'),
+             #('rho_b', 'Bebauungsdichte'),
               ]
 
     y_axis = [('trip_speed','Durchschnittliche\nLiniengeschwindigkeit [km/h]'),

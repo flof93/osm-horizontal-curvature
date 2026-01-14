@@ -2,7 +2,6 @@
 # OFFENE TODOS #
 #==============#
 
-# TODO: Gent & Antwerpen entweder in eine Zeile in cities.csv zusammenfassen oder Lösung finden und Trennen
 # TODO: Doc-Strings und Dokumentation
 
 #===========#

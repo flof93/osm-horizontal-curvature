@@ -231,6 +231,6 @@ def split_gtfs_by_agency(gtfs_path, output_dir):
 
 # --- Example usage ---
 if __name__ == "__main__":
-    gtfs_input = "../GTFS_Split/rbfreiburg.zip"  # path to your GTFS feed
-    output_directory = "../GTFS_Split/freiburg/"
+    gtfs_input = "../GTFS_Split/gtfs_vbb.zip"  # path to your GTFS feed
+    output_directory = "../GTFS_Split/VBB/"
     split_gtfs_by_agency(gtfs_input, output_directory)
