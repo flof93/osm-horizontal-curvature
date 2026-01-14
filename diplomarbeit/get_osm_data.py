@@ -100,7 +100,7 @@ def plt_network(network : curvy.Curvy, city: str = ""):
 def load_data(coordinates: dict, force_download: bool = False, data_path: str = './data/'):
     networks = {}
 
-    for location in tqdm(coordinates):
+    for location in tqdm(coordinates, desc='Loading OSM-Data'):
         os.makedirs(data_path + location + '/osm', exist_ok=True)
         os.makedirs(data_path + location + '/timetable', exist_ok=True)
         os.makedirs(data_path + location + '/buildings', exist_ok=True)
@@ -112,12 +112,12 @@ def load_data(coordinates: dict, force_download: bool = False, data_path: str = 
                 logger.info("Loaded City %s from disk" % location)
 
         except FileNotFoundError:
-            print("%s.pickle not found" % location)
+            logger.info("%s.pickle not found" % location)
             download = True
 
 
         if download:
-            print("Starting download of %s" % location)
+            logger.info("Starting download of %s" % location)
             new_network: curvy.Curvy = curvy.Curvy(*coordinates[location]['coords'],
                                              desired_railway_types = coordinates[location]['modes'],
                                              download=True, recurse='>')  # Liest die Tramstrecken aus
@@ -128,25 +128,27 @@ def load_data(coordinates: dict, force_download: bool = False, data_path: str = 
 
     return networks
 
-def main(data_path: str = './data/'):
+def main(data_path: str = './data/', force_download: bool = False, generate_heights: bool = False):
     coords: dict = da.utils.load_csv_input(data_path=data_path, filename='cities.csv')
-    print('Loading Cities\n')
-    netzwerke = load_data(coordinates= coords, force_download=False, data_path = data_path)
+    logger.info('Beginning Loading Cities')
+    netzwerke = load_data(coordinates= coords, force_download=force_download, data_path = data_path)
 
-    print('\nCities added, generating DataFrames and calculating Heights.\n')
-    for city in tqdm(netzwerke):
-        if not os.path.exists('%s%s/osm/processed.csv' % (data_path, city)):
+    logger.info('Cities added, generating DataFrames and calculating Heights.\n')
+    for city in tqdm(netzwerke, desc='Generating Heights'):
+        if force_download or not os.path.exists('%s%s/osm/processed.csv' % (data_path, city)) or generate_heights:
             network = netzwerke[city]
             df_linien = da.utils.generate_df(network, generate_heights=True)
             df_linien.reset_index(inplace=True)
             #df_linien.to_feather('./Auswertung/Networks/%s.feather' % city)
             df_linien.to_csv(path_or_buf='%s%s/osm/processed.csv' % (data_path, city), index=False)
+            logger.info('Heights for %s generated and <processed.csv> written' % city)
 
     return None
 
 if __name__ == "__main__":
-    logging.basicConfig(filename='myapp.log', level=logging.WARNING)
-    netze = main()
+    FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(filename='myapp.log', level=logging.INFO, format=FORMAT)
+    netze = main(force_download=False, generate_heights=False)
 
 
 
