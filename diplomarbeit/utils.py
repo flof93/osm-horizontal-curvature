@@ -24,22 +24,22 @@ from math import ceil
 logger = logging.getLogger(__name__)
 
 
-def get_nominatim_bounding_box(query):     # Nominatim-Url
+def get_nominatim_bounding_box(query: object) -> list[float] | list[None]:
     url = "https://nominatim.openstreetmap.org/search"
     headers = {'User-agent': 'Diplomarbeit_Trams/1.0'}
 
-    # Parameter
+
     parameters = {
         'q' : query,
         'format' : 'json',
         'addressdetails' : 1
     }
 
-    # Anfrage an Nominatim
+
     response = requests.get(url, params = parameters, headers=headers)
 
-    # Wenn Anfrage erfolgreich war. (Status 200)
-    if response.status_code == 200:
+
+    if response.status_code == 200: # Request sucessful (Status 200)
         results = response.json()
 
         if results:
@@ -269,7 +269,7 @@ def cleanup_input(data_path: str, filename: str = 'cities.csv', recalculate: boo
 
 
 
-    data.sort_values(by='machine_readable', axis='rows').to_csv(data_path+filename, sep=';', index=False)
+    data.sort_values(by='machine_readable', axis='index').to_csv(data_path+filename, sep=';', index=False)
 
 
 def make_folders(data_path: str, city: str) -> None:

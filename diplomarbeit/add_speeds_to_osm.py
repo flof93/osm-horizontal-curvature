@@ -8,7 +8,18 @@ import shapely as shp
 import shapely.errors
 
 
-def match_station(single: str, multiple: list) -> Tuple[str, str]:
+
+
+def match_station(single: str, multiple: list) -> Tuple[str, str | None]:
+    """
+
+    Takes single information and searches in a list for the most suitable item.
+    Asks User to enter which information to use.
+
+    :param single: String to look for in multiple
+    :param multiple: list
+    :return: Tuple[str, str | None] Tuple to map single -> element of multiple, if no matching element from multiple is selected, return [single, None]
+    """
     thresh: float = 0.8
     do_ask: bool = True
 
@@ -37,10 +48,11 @@ def match_station(single: str, multiple: list) -> Tuple[str, str]:
                 print('+++++++++++++++++++++++++\nALLE STATIONEN ANGEZEIGT!\n+++++++++++++++++++++++++')
                 answer = input('Bitte passende Station für %s wählen ([X] für keine der Möglichkeiten): ' % single)
             else:
-                answer = input('Bitte passende Station für %s wählen ([M] für mehr Stationen, [X] für keine der Möglichkeiten): ' % single)
+                answer = input(
+                    'Bitte passende Station für %s wählen ([M] für mehr Stationen, [X] für keine der Möglichkeiten): ' % single)
 
             if answer.lower() == 'x':
-                return single, np.nan
+                return single, None
             elif answer.lower() == 'm':
                 thresh -= 0.2
                 continue
@@ -54,6 +66,13 @@ def match_station(single: str, multiple: list) -> Tuple[str, str]:
 
 
 def extract_lines(network: pd.DataFrame) -> gpd.GeoDataFrame:
+    """
+    Takes a DataFrame, enriches the data with geometries and calculates average data for each line.
+    :param network: pd.DataFrame
+        with information of a Network
+    :return: gpd.GeoDataFrame
+        Enriched with line geometries
+    """
     grouped = network.groupby(['Linie'])
     data_df = []
 
@@ -80,7 +99,8 @@ def extract_lines(network: pd.DataFrame) -> gpd.GeoDataFrame:
                         #group['Gauge'].unique()[0],
                         ])
 
-    columns = ['line_name', 'line_number', 'from', 'to', 'distance', 'curvature', 'height_up', 'height_down', 'geometry']
+    columns = ['line_name', 'line_number', 'from', 'to', 'distance', 'curvature', 'height_up', 'height_down',
+               'geometry']
     df_lines = gpd.GeoDataFrame(data=data_df, columns=columns, crs='EPSG:4326')
 
     return df_lines
@@ -104,7 +124,8 @@ def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inli
             try:
                 osm_first_stops_for_gtfs.append(matching_dict[osm_first_stop])
             except KeyError:
-                osm_new, gtfs_new = match_station(single=osm_first_stop, multiple=gtfs['first_stop_name'].unique().tolist())
+                osm_new, gtfs_new = match_station(single=osm_first_stop,
+                                                  multiple=gtfs['first_stop_name'].unique().tolist())
                 matching_dict[osm_new] = gtfs_new
                 osm_first_stops_for_gtfs.append(gtfs_new)
         else:
@@ -114,7 +135,8 @@ def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inli
             try:
                 osm_last_stops_for_gtfs.append(matching_dict[osm_last_stop])
             except KeyError:
-                osm_new, gtfs_new = match_station(single=osm_last_stop, multiple=gtfs['last_stop_name'].unique().tolist())
+                osm_new, gtfs_new = match_station(single=osm_last_stop,
+                                                  multiple=gtfs['last_stop_name'].unique().tolist())
                 matching_dict[osm_new] = gtfs_new
                 osm_last_stops_for_gtfs.append(gtfs_new)
         else:
@@ -151,15 +173,12 @@ def match_gtfs_on_osm_alt(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, 
             matching_dict[gtfs_new] = osm_new
             osm_first_stops_for_gtfs.append(gtfs_new)
 
-
-
         try:
             osm_last_stops_for_gtfs.append(matching_dict[gtfs_last_stop])
         except KeyError:
             gtfs_new, osm_new = match_station(single=gtfs_last_stop, multiple=osm['to'].unique().tolist())
             matching_dict[gtfs_new] = osm_new
             osm_last_stops_for_gtfs.append(gtfs_new)
-
 
     if inline:
         gtfs['osm_first_stop_name'] = osm_first_stops_for_gtfs
@@ -169,21 +188,23 @@ def match_gtfs_on_osm_alt(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, 
 
     return matching_dict
 
-def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, ignore_line_number: bool = False) -> pd.DataFrame:
 
+def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, ignore_line_number: bool = False) -> pd.DataFrame:
+    """
+    Used to merge two DataFrames, osm and gtfs.
+    :param osm: pandas.DataFrame
+        containing osm data, generated from extract_lines
+    :param gtfs: pandas.DataFrame
+        containing timetable data
+    :param ignore_line_number: bool, controls if Line Number (OSM-Tag 'ref') is used as feature in merge.
+    :return: pandas.DataFrame merged from osm and gtfs
+    """
     if ignore_line_number:
         left_on = ['gtfs_first_stop_name', 'gtfs_last_stop_name']
         right_on = ['first_stop_name', 'last_stop_name']
     else:
         left_on = ['line_number', 'gtfs_first_stop_name', 'gtfs_last_stop_name']
         right_on = ['route_short_name', 'first_stop_name', 'last_stop_name']
-
-    # if ignore_line_number:
-    #     left_on = ['from', 'to']
-    #     right_on = ['osm_first_stop_name', 'osm_last_stop_name']
-    # else:
-    #     left_on = ['line_number', 'from', 'to']
-    #     right_on = ['route_short_name', 'osm_first_stop_name', 'osm_last_stop_name']
 
     return_data = pd.merge(left=osm.astype({'line_number': 'str'}),
                            right=gtfs.astype({'route_short_name': 'str'}),
@@ -193,15 +214,21 @@ def merge_osm_gtfs(osm: pd.DataFrame, gtfs: pd.DataFrame, ignore_line_number: bo
                            )
     return return_data
 
-def calc_avg_speed_osm(data: pd.DataFrame):
+
+def calc_avg_speed_osm(data: pd.DataFrame) -> None:
+    """
+    Fills missing average speed information in data.
+    :param data: pandas.DataFrame, generated from merge_osm_gtfs
+    """
     if data['trip_speed'].isnull().all():
         data['trip_speed'] = data['distance'] / data['avg_time'] * 3600
 
-def main(data_dict: str, city: str, ignore_line_number: bool = False):
+
+def main(data_dict: str, city: str, ignore_line_number: bool = False) -> pd.DataFrame:
     gtfs = pd.read_csv('%s%s/timetable/results/trip_speeds_route_direction.csv' % (data_dict, city))
-    osm = extract_lines(pd.read_csv('%s%s/osm/processed.csv' % (data_dict, city), dtype={'Nummer':'string'}))
+    osm = extract_lines(pd.read_csv('%s%s/osm/processed.csv' % (data_dict, city), dtype={'Nummer': 'string'}))
     match_gtfs_on_osm(osm=osm, gtfs=gtfs, filepath='%s%s/station_matching.csv' % (data_dict, city))
-    new = merge_osm_gtfs(osm=osm, gtfs=gtfs, ignore_line_number= ignore_line_number)
+    new = merge_osm_gtfs(osm=osm, gtfs=gtfs, ignore_line_number=ignore_line_number)
     calc_avg_speed_osm(data=new)
     return new
 
@@ -210,4 +237,3 @@ if __name__ == '__main__':
     data_dict = './data/'
     city = 'lviv'
     main(data_dict, city)
-
