@@ -121,3 +121,90 @@ ag=feed.agency[feed.agency['agency_id'].isin(feed.routes[feed.routes['route_type
 
 barcelona = ox.graph_from_point((41.395029, 2.170953), 500, dist_type='bbox')
 ox.plot_graph(barcelona, figsize=(10, 10), bgcolor='w', edge_color='k', node_color='k')
+
+#============================#
+# Parkplatz aus get_osm_data #
+#============================#
+
+coords: dict = load_csv_input("cities.csv")
+coords = {'Budapest':{'coords':(18.8,47.30,19.40,47.70), 'modes':['tram','light_rail']}} # For testing purposes
+coords = {'Gmunden': {'coords': (13.77,47.90,14,48), 'modes': ['tram', 'light_rail']}}  # For testing purposes
+bbox = da.utils.get_bounding_box('Portland')
+coords = {'Portland':{'coords':(bbox[2]-1, bbox[0]-1, bbox[3], bbox[1]), 'modes':['tram', 'light_rail']}}
+
+print ('Loading Cities')
+netzwerke = load_data(coords, force_download=True)
+
+print('Cities added, generating DataFrames and calculating Heights.')
+#stadt, linie, richtung, dist, curvature_angular, gauge, elevation_max, elevation_min = [], [], [], [], [], [], [], []
+for city in tqdm(netzwerke):
+    network = netzwerke[city]
+    df_linien = da.utils.generate_df(network)
+    df_linien.reset_index(inplace=True)
+
+    # line_draw = network.railway_lines[0]
+    # plt_line(line_draw)
+    # plt_curvature(line_draw)
+    # plt_line_curvature(line_draw)
+    plt_network(network, city=city)
+    # fig, ax = plt.subplots(10, 10)
+    # plt.show()
+
+   df_linien['Höhe'] = da.utils.get_heights(lat= df_linien['Latitude'].tolist(), lon= df_linien['Longitude'].tolist())
+
+
+
+    for j in network.railway_lines:
+        try:
+            curv = max(j.gamma) / (max(j.s) / 1000)
+            curvature_angular.append(curv)
+            dist.append(max(j.s) / 1000)
+
+        except ValueError:
+            logger.warning(
+                "Ignoring %s %s, no values for curvature or change of angle available" % (str(city), str(j)))
+            curvature_angular.append(np.nan)
+            dist.append((np.nan))
+
+        stadt.append(city)
+        linie.append(j.ref if hasattr(j, 'ref') else '')
+        richtung.append(str(j))
+
+        try:
+            gauge.append(int(j.ways[0].tags['gauge']))
+        except (KeyError, IndexError, ValueError):
+            gauge.append(np.nan)
+            logger.warning("No Gauge data for line %s in %s available" % (str(j), str(city)))
+        # except TypeError: # könnte relevant sein, wenn die Linie im Dreischienengleis startet
+
+        ele = da.utils.get_heights_for_line(j)
+        if ele:
+            elevation_min.append(min(ele))
+            elevation_max.append(max(ele))
+        else:
+            elevation_min.append(np.nan)
+            elevation_max.append(np.nan)
+
+
+
+
+d = {"Stadt": stadt, "Linie": linie, "Richtung": richtung, "Distanz": dist, "Kurvigkeit": curvature_angular,
+     'Spurweite': gauge, 'Höhe_Max': elevation_max, 'Höhe_Min': elevation_min}
+df = pd.DataFrame(data=d)
+df.to_feather('Auswertung/data.feather')
+
+
+
+
+pt_cities = pd.pivot_table(data=df,
+                           values=["Kurvigkeit", "Distanz"],
+                           index=["Stadt", 'Spurweite'],
+                           aggfunc={'Kurvigkeit': 'mean', 'Distanz': ('sum', 'mean')})
+pt_gauge = pd.pivot_table(data=df, values=["Kurvigkeit", "Distanz"], index="Spurweite", aggfunc='mean')
+print(pt_cities)
+print(pt_gauge)
+
+pandas.read_csv('cities.csv')
+
+sns.boxplot(data=df, y='Kurvigkeit', x='Spurweite', orient='v')
+
