@@ -191,22 +191,4 @@ def calc_main(data_dict) -> None:
 
 if __name__ == '__main__':
     data_dict = './data/'
-
-    data = gpd.read_file(data_dict + 'results.json')
-    #data = data[data['Stadt']=='Berlin']
-
-    download_buildings_bbox(data_path=data_dict)
-    #agg_gdf = make_download_gdf_poly(gdf=data, width='Buffer_Width')
-    #agg_gdf = make_download_gdf_bbox(gdf=data, width='Buffer_Width')
-    #download_buildings_along_lines(agg_gdf=agg_gdf)
-    get_buffer_line(data, 'Buffer_Width', True)
-    data = clip_lines(data=data)
-
-    calc_building_density(data=data, inplace=True, cleanup=True)
-    data.to_file(data_dict + 'building_data.json')
-    # data.to_crs('EPSG:6933')
-    # data['rho_b'] = data['clipped_buildings'].area / data['buffer_geometry'].area
-    # data.drop(labels=['buffer_geometry','clipped_buildings'], axis='columns').to_file(data_dict+'building_data.json')
-
-    #buildings = get_data_along_lines(gdf=data, width='Buffer_Width', data_tags={'building':True}, inplace=True)
-    #buildings.to_file(data_dict+'building_data.json')
+    calc_main(data_dict=data_dict)
