@@ -7,6 +7,8 @@ import seaborn as sns
 import pandas as pd
 import geopandas as gpd
 
+UNIT_CONVERSION= {'portland':0.3048, 'san_francisco': 1.609344}
+
 def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_times: bool = False):
     cities = da.utils.load_csv_input(data_path= data_dict, filename=filename)
 
@@ -36,6 +38,9 @@ def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_time
                 continue
 
         gdf = da.add_speeds_to_osm.main(data_dict, city, ignore_linenumber)
+        if city in UNIT_CONVERSION:
+            gdf['trip_speed']=gdf['trip_speed']*UNIT_CONVERSION[city]
+            gdf['avg_dist']=gdf['avg_dist']*UNIT_CONVERSION[city]
         gdf['city'] = city
         full_data = pd.concat([full_data, gdf])#.dropna(axis='rows')])
 
