@@ -250,16 +250,6 @@ class Curvy:
                         else:
                             logger.warning("Relation %s has no possible Endpoint (Distance to Start-Node < %s m)" % (rel,25))
 
-                        ### rel_way_ids = list([n for n in sorted(nx.connected_components(line_G)) if len(n)>2][0]) # Filter out short sections (e.g. wrongly tagged platforms)
-                        ### TODO: SPINNT!!! Aktuell kommen hier Node-IDs und keine Way-Ids an!
-                        ### S = [tmp_g.subgraph(c).copy() for c in nx.connected_components(tmp_g)]
-                        ### S[0]
-                        ### list(nx.get_edge_attributes(S[0], 'way_id').values())
-
-                        ### [(val,node) for (node, val) in tmp_g.degree() if val>2] Findet weichen im Netz
-                        ### [(val,node) for (node, val) in tmp_g.degree() if val==1] Findet Endpunkte im Netz
-
-                        # TODO: Filter out branches / sections which branch of at a switch
 
                         if trk_result.result:
                             rel_ways = [w for w in trk_result.result.ways if w.id in rel_way_ids]
