@@ -95,11 +95,11 @@ def extract_lines(network: pd.DataFrame) -> gpd.GeoDataFrame:
                         curvature,
                         aufstieg,
                         abstieg,
-                        geometry
-                        #group['Gauge'].unique()[0],
+                        group['Gauge'].unique()[0],
+                        geometry,
                         ])
 
-    columns = ['line_name', 'line_number', 'from', 'to', 'distance', 'curvature', 'height_up', 'height_down',
+    columns = ['line_name', 'line_number', 'from', 'to', 'distance', 'curvature', 'height_up', 'height_down','gauge',
                'geometry']
     df_lines = gpd.GeoDataFrame(data=data_df, columns=columns, crs='EPSG:4326')
 
