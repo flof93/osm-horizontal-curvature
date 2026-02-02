@@ -7,6 +7,7 @@ import matplotlib.gridspec as gridspec
 import diplomarbeit as da
 
 from matplotlib.transforms import Bbox
+import math
 
 
 RESULTS_DIR = Path('./results')  # TODO: Make LaTeX-Picture directory for Production
@@ -25,50 +26,54 @@ machine_dict=cities_df[['Stadt', 'machine_readable']].set_index('Stadt').to_dict
 
 list_to_get=['Amsterdam',
  'Antwerpen',
- #'Berlin',
+ 'Berlin',
  'Bordeaux',
- 'Brandenburg a. d. Havel',]
- # 'Brüssel',
- # 'Budapest',
- # 'Bukarest',
- # 'Den Haag',
- # 'Freiburg',
- # 'Gent',
- # 'Göteborg',
- # 'Graz',
- # 'Helsinki',
- # 'Innsbruck',
- # 'Katowice',
- # 'Köln',
- # 'Linz',
- # 'Lviv',
- # 'Lyon',
- # 'Mailand',
- # 'Manchester',
- # 'Melbourne',
- # 'München',
- # 'Portland',
- # 'Potsdam',
- # 'Prag',
- # 'Riga',
- # 'Rom',
- # 'Rotterdam',
- # 'San Francisco',
- # 'Sankt Petersburg',
- # 'Sofia',
- # 'Stuttgart',
- # 'Turin',
- # 'Toronto',
- # 'Ulm',
- # 'Warschau',
- # 'Wien',
- # 'Zagreb',
- # 'Zürich']
+ 'Brandenburg a. d. Havel',
+ 'Brüssel',
+ 'Budapest',
+ 'Bukarest',
+ 'Den Haag',
+ 'Freiburg',
+ 'Gent',
+ 'Göteborg',
+ 'Graz',
+ 'Helsinki',
+ 'Innsbruck',
+ 'Katowice',
+ 'Köln',
+ 'Linz',
+ 'Lviv',
+ 'Lyon',
+ 'Mailand',
+ 'Manchester',
+ 'Melbourne',
+ 'München',
+ 'Portland',
+ 'Potsdam',
+ 'Prag',
+ 'Riga',
+ 'Rom',
+ 'Rotterdam',
+ 'San Francisco',
+ 'Sankt Petersburg',
+ 'Sofia',
+ 'Stuttgart',
+ 'Turin',
+ 'Toronto',
+ 'Ulm',
+ 'Warschau',
+ 'Wien',
+ 'Zagreb',
+ 'Zürich']
+
+def calculate_phi(entropy:float, n_bins:int=36)->float:
+    return 1-((entropy-1.386)/(math.log(n_bins)-1.386))**2
 
 
 
 entropy_street=[]
 entropy_tram=[]
+city_axes = []
 
 n = len(list_to_get)
 ncols = int(np.ceil(np.sqrt(n/2)))
@@ -108,9 +113,26 @@ for grid, place in zip(gs0, ordered_list):
     ax2 = fig.add_subplot(gsi[1,1],projection='polar')
     ox.plot.plot_orientation(Gu_tram, ax=ax2, title='Tram', area=True, color='r', title_font={'size':18}, title_y=1.1)
 
+    city_axes.append((place, [ax1, ax2]))
+
+# Draw once so tight bounding boxes are correct
+fig.canvas.draw()
+renderer = fig.canvas.get_renderer()
+
 fig.savefig(RESULTS_DIR / 'Orientations.png', dpi=100, bbox_inches='tight')
 
-entropy_df=pd.DataFrame({'Stadt':list_to_get,'H0_strasse':entropy_street, 'H0_tram':entropy_tram})
+entropy_df=pd.DataFrame({'Stadt':ordered_list,'H0_strasse':entropy_street, 'H0_tram':entropy_tram})
+entropy_df['phi_street']=calculate_phi(entropy_df['H0_strasse'])
+entropy_df['phi_tram']=calculate_phi(entropy_df['H0_tram'])
 entropy_df.to_csv(RESULTS_DIR / 'Orientations.csv', index=False)
 
 #fig_landscape.savefig(da.DATA_DICT / machine_dict[place] / 'results' / "orientation_landscape.png", dpi=300, bbox_inches="tight")
+
+
+for place, axes in city_axes:
+    bboxes = [ax.get_tightbbox(renderer) for ax in axes if ax.get_visible()]
+    bbox = Bbox.union(bboxes)
+    # Add a little padding
+    bbox = bbox.expanded(1.03, 1.05)
+    bbox = bbox.transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig(da.DATA_DICT / machine_dict[place] / 'results' / "orientation_landscape.png", dpi=300, bbox_inches=bbox)
