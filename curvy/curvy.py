@@ -117,9 +117,9 @@ class Curvy:
         #                  out body;
         #               """
 
-        ### FF: rewrite um die Wegpunkte und Wege rekursiv abzufragen
+        ### FF: rewrite um die Wegpunkte und Wege rekursiv abzufragen, [!'rack'] verwirft Zahnradbahnen
         track_query = ("""rel[route = """+ railway_type + """]("""+ str(self.lat_sw) +""","""+ str(self.lon_sw) + ""","""+ str(self.lat_ne) + ""","""+ str(self.lon_ne) + """) -> .relation;
-                       nw(r.relation);
+                       nw[!'rack'](r.relation);
                        (._;>>;);
                        out body;
                        """)
@@ -265,7 +265,7 @@ class Curvy:
         else:
             logger.warning("Cant download OSM data because of not internet connection")
 
-    def query_overpass(self, query: str, attempts: int = 3) -> Result:
+    def query_overpass(self, query: str, attempts: int = 5) -> Result:
         for a in range(attempts):
             time.sleep(a)
             try:
@@ -303,7 +303,7 @@ class Curvy:
             except socket.timeout as e:
                 logger.warning("Socket timeout, retrying".format(e))
         else:
-            logger.warning("Could download OSM data via Overpass after %d attempts with query: %s" % (attempts,
+            logger.warning("Could not download OSM data via Overpass after %d attempts with query: %s" % (attempts,
                                                                                                       query))
             return None
 
