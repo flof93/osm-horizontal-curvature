@@ -7,7 +7,10 @@ import seaborn as sns
 import pandas as pd
 import geopandas as gpd
 
+import diplomarbeit as da
+
 UNIT_CONVERSION= {'portland':0.3048, 'san_francisco': 1.609344}
+
 
 def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_times: bool = False):
     cities = da.utils.load_csv_input(data_path= data_dict, filename=filename)
@@ -46,9 +49,15 @@ def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_time
 
 
     cities = pd.read_csv(data_dict + 'cities.csv', sep=';')
+    # cities['category'] = [
+    #     'a' if i < cities['Buffer_Width'].quantile(0.33) else 'c' if i > cities['Buffer_Width'].quantile(
+    #         0.66) else 'b' for i in cities['Buffer_Width']]
+
+
     full_data = full_data.merge(right=cities, right_on=['machine_readable'], left_on=['city'])
     full_data.drop(axis='columns', inplace=True,
              labels=['Ost', 'West', 'Nord', 'Sued', 'RailModes', 'Geschwindigkeit', 'GTFS-Daten', 'Ignore_LineNumber'])
+    full_data['region'] = [da.REGION_DICT[i] for i in full_data['ISO3166']]
 
     return full_data
 
@@ -77,8 +86,8 @@ if __name__ == '__main__':
     data = make_whole_dataframe(data_dict= data_dict, calc_times=False)
     data.to_csv(data_dict+'results.csv')
     data.to_file(filename=data_dict+'results.json')
-
-    da.buildings.download_buildings_bbox(data_path=data_dict)
+    #
+    # da.buildings.download_buildings_bbox(data_path=data_dict)
     da.buildings.calc_main(data_dict=data_dict)
 
     # data = pd.read_csv(data_dict+'results.csv') # Backuplösung, falls gpd nicht funktioniert
@@ -200,28 +209,32 @@ if __name__ == '__main__':
     ax[1].set_xlabel('Durchschnittlicher\nHaltestellenabstand [m]')
     plt.show()
 
-    columns=['curvature', 'avg_dist', 'trip_speed', 'height_up', 'height_down', 'rho_b']
-    df_draw = data.dropna(axis='rows', subset=columns)[columns]
-    df_draw.rename(columns={'curvature':'Kurvigkeit [gon/km]',
-                            'avg_dist':'Durchschnittlicher\nHaltestellenabstand [m]',
-                            'trip_speed':'Durchschnittsgeschwindigkeit [km/h]',
-                            'height_up': 'Aufstieg [m/km]',
-                            'height_down': 'Abstieg [m/km]',
-                            'rho_b':'Bebauungsdichte [-]'}, inplace=True)
-    sns.set_style('darkgrid')
+    # # columns=['curvature', 'avg_dist', 'trip_speed', 'height_up', 'height_down', 'rho_b']
+    # df_draw = data.dropna(axis='rows', subset=columns)[columns]
+    # # df_draw.rename(columns={'curvature':'Kurvigkeit [gon/km]',
+    # #                         'avg_dist':'Durchschnittlicher\nHaltestellenabstand [m]',
+    # #                         'trip_speed':'Durchschnittsgeschwindigkeit [km/h]',
+    # #                         'height_up': 'Aufstieg [m/km]',
+    # #                         'height_down': 'Abstieg [m/km]',
+    # #                         'rho_b':'Bebauungsdichte [-]'}, inplace=True)
+    # # sns.set_style('darkgrid')
+    # #
+    # # g = sns.PairGrid(data=df_draw, diag_sharey=False)
+    # # g.map_upper(sns.scatterplot, s=15)
+    # # g.map_lower(sns.kdeplot)
+    # # g.map_diag(sns.kdeplot, lw=2)
+    # # plt.show()
+    #
+    # print('Korellationsmatrix:')
+    # matrix=df_draw.corr()
+    # print(matrix)
 
-    g = sns.PairGrid(data=df_draw, diag_sharey=False)
-    g.map_upper(sns.scatterplot, s=15)
-    g.map_lower(sns.kdeplot)
-    g.map_diag(sns.kdeplot, lw=2)
-    plt.show()
-
-    print('Korellationsmatrix:')
-    matrix=df_draw.corr()
-    print(matrix)
-
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(matrix, annot=True, cmap="coolwarm", fmt=".3f", linewidths=0.5, vmin=-1, vmax=1)
-    plt.title("Correlation Heatmap")
-    plt.show()
+    # sns.set_style('white')
+    # plt.figure(figsize=(8, 6))
+    # corr=df_draw.corr()
+    # mask = np.triu(np.ones_like(corr, dtype=bool))
+    # sns.heatmap(matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5, vmin=-1, vmax=1, mask=mask, square=True, cbar_kws={"shrink": .5})
+    #
+    # plt.title("Correlation Heatmap")
+    # plt.show()
 
