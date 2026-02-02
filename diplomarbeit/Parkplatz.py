@@ -208,3 +208,7 @@ pandas.read_csv('cities.csv')
 
 sns.boxplot(data=df, y='Kurvigkeit', x='Spurweite', orient='v')
 
+
+
+data[data['Buffer_Width']<data['Buffer_Width'].quantile(0.33)]['Stadt'].unique()
+
