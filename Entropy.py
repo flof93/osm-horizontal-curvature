@@ -10,7 +10,7 @@ from matplotlib.transforms import Bbox
 import math
 
 
-RESULTS_DIR = Path('./results')  # TODO: Make LaTeX-Picture directory for Production
+RESULTS_DIR = Path('~/Documents/Diplomarbeit/osm-horizontal-curvature/results').expanduser()  # TODO: Make LaTeX-Picture directory for Production
 
 plt.rc('font', family='serif', size=11)
 plt.rc('text', usetex=True)
@@ -76,7 +76,7 @@ entropy_tram=[]
 city_axes = []
 
 n = len(list_to_get)
-ncols = int(np.ceil(np.sqrt(n/2)))
+ncols = 4
 nrows = int(np.ceil(n / ncols))
 figsize = (ncols * 5 * 1.75, nrows * 5)
 #fig, axes = plt.subplots(nrows, ncols, figsize=figsize, subplot_kw={"projection": "polar"})
@@ -124,9 +124,9 @@ fig.savefig(RESULTS_DIR / 'Orientations.png', dpi=100, bbox_inches='tight')
 entropy_df=pd.DataFrame({'Stadt':ordered_list,'H0_strasse':entropy_street, 'H0_tram':entropy_tram})
 entropy_df['phi_street']=calculate_phi(entropy_df['H0_strasse'])
 entropy_df['phi_tram']=calculate_phi(entropy_df['H0_tram'])
-entropy_df.to_csv(RESULTS_DIR / 'Orientations.csv', index=False)
+entropy_df.to_csv(da.DATA_DIR / 'Orientations.csv', index=False)
 
-#fig_landscape.savefig(da.DATA_DICT / machine_dict[place] / 'results' / "orientation_landscape.png", dpi=300, bbox_inches="tight")
+#fig_landscape.savefig(da.DATA_DIR / machine_dict[place] / 'results' / "orientation_landscape.png", dpi=300, bbox_inches="tight")
 
 
 for place, axes in city_axes:
@@ -135,4 +135,5 @@ for place, axes in city_axes:
     # Add a little padding
     bbox = bbox.expanded(1.03, 1.05)
     bbox = bbox.transformed(fig.dpi_scale_trans.inverted())
-    fig.savefig(da.DATA_DICT / machine_dict[place] / 'results' / "orientation_landscape.png", dpi=300, bbox_inches=bbox)
+    fig.savefig(RESULTS_DIR /'Appendix_Results' / machine_dict[place] / "orientation_landscape.png", dpi=300, bbox_inches=bbox)
+    fig.savefig(da.DATA_DIR / machine_dict[place] / 'results' / "orientation_landscape.png", dpi=300, bbox_inches=bbox)
