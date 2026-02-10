@@ -14,6 +14,7 @@ UNIT_CONVERSION= {'portland':0.3048, 'san_francisco': 1.609344}
 
 def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_times: bool = False):
     cities = da.utils.load_csv_input(data_path= data_dict, filename=filename)
+    #Todo: Import Orientation data and merge
 
     full_data = pd.DataFrame()
 
@@ -83,12 +84,12 @@ if __name__ == '__main__':
     #da.utils.cleanup_input(data_dict)
 
 
-    data = make_whole_dataframe(data_dict= data_dict, calc_times=False)
-    data.to_csv(data_dict+'results.csv')
-    data.to_file(filename=data_dict+'results.json')
+    #data = make_whole_dataframe(data_dict= data_dict, calc_times=False)
+    #data.to_csv(data_dict+'results.csv')
+    #data.to_file(filename=data_dict+'results.json')
     #
     # da.buildings.download_buildings_bbox(data_path=data_dict)
-    da.buildings.calc_main(data_dict=data_dict)
+    #da.buildings.calc_main(data_dict=data_dict)
 
     # data = pd.read_csv(data_dict+'results.csv') # Backuplösung, falls gpd nicht funktioniert
 
@@ -96,10 +97,9 @@ if __name__ == '__main__':
     data.height_up = data.height_up.astype('float64')
     data.height_down = data.height_down.astype('float64')
 
-
-
-
-
+    sns.set_style('darkgrid')
+    plt.rc('font', family='serif', size=11)
+    plt.rc('text', usetex=True)
 
     # g = sns.lmplot(
     #     data=data,
@@ -111,15 +111,15 @@ if __name__ == '__main__':
     #plt.rc('text', usetex=True)
     #plt.rc('font', family='serif')
     # Würde gehen mit r'Dieser Text als label, etx'
-    sns.set_style('darkgrid')
 
-    x_axis = [('curvature', 'Durchschnittliche\nKurvigkeit [gon/km]'),
-             ('avg_dist', 'Durchschnittlicher\nHaltestellenabstand [m]'),
+
+    x_axis = [('curvature', da.COLUMN_NAMES_TEX['curvature']),
+             ('avg_dist', da.COLUMN_NAMES_TEX['avg_dist']),
              #('height_up', 'Durchschnittlicher\nAufstieg [m/km]'),
              #('rho_b', 'Bebauungsdichte'),
               ]
 
-    y_axis = [('trip_speed','Durchschnittliche\nLiniengeschwindigkeit [km/h]'),
+    y_axis = [('trip_speed',da.COLUMN_NAMES_TEX['trip_speed']),
               ]
 
     for i in data['city'].unique():
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
             add_subplot(data=city_data, x=x_axis[j], y=y_axis[0], subaxis=j, axs=axs)
 
-        plt.savefig(fname=data_dict+i+'/results/corr.png', bbox_inches='tight', pad_inches=0.2)
+        plt.savefig(fname=data_dict+i+'/results/corr.png', bbox_inches='tight', pad_inches=0.2, dpi=600)
         plt.close()
 
 
@@ -164,9 +164,7 @@ if __name__ == '__main__':
     print("d:", model.intercept_)
     print("R²: ", model.score(X=data_unabh, y=data['trip_speed']))
 
-    sns.set_style('darkgrid')
-
-    fig, ax = plt.subplots(nrows=1, ncols=2)
+    fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
 
     model = LinearRegression(fit_intercept=True)
     data_unabh = data[['curvature']]
@@ -204,9 +202,9 @@ if __name__ == '__main__':
 
     ax[0].set_ylim(00, 40)
     ax[1].set_ylim(00, 40)
-    ax[0].set_xlabel('Durchschnittliche\nKurvigkeit [gon/km]')
-    ax[0].set_ylabel('Durchschnittliche\nLiniengeschwindigkeit [km/h]')
-    ax[1].set_xlabel('Durchschnittlicher\nHaltestellenabstand [m]')
+    ax[0].set_xlabel(da.COLUMN_NAMES_TEX['curvature'])
+    ax[0].set_ylabel(da.COLUMN_NAMES_TEX['trip_speed'])
+    ax[1].set_xlabel(da.COLUMN_NAMES_TEX['avg_dist'])
     plt.show()
 
     # # columns=['curvature', 'avg_dist', 'trip_speed', 'height_up', 'height_down', 'rho_b']
