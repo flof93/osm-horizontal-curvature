@@ -4,3 +4,4 @@ from .get_osm_data import *
 from .speeds import *
 from .buildings import *
 from .constants import *
+from .make_latex import *
