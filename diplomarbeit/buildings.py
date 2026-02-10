@@ -10,14 +10,6 @@ import requests.exceptions
 from concurrent.futures import ThreadPoolExecutor
 
 
-# street = ox.geocode_to_gdf('Haidgasse, Vienna, Austria')
-# area = street.buffer(distance=0.0001)
-# buildings = ox.features_from_polygon(area[0], {'building': True})
-# cut = buildings.clip(mask=area)
-# fig, ax = plt.subplots()
-# area.exterior.plot(ax=ax, color='red')
-# cut.plot(ax=ax)
-
 def calculate_buffer_width(city: str) -> float:
     graph = ox.graph.graph_from_place(city, network_type='drive')
     d = pd.Series([d['length'] for u, v, d in graph.edges(data=True)])
@@ -105,26 +97,6 @@ def download_buildings_along_lines(agg_gdf: gpd.GeoDataFrame, data_path: str = '
             continue
         payload.to_file(filename=data_path + city + '/buildings/city_buildings.geojson', use_arrow=True,
                         driver='GeoJSON')
-        #time.sleep(30)
-
-    # print('Starting Download')
-    # if inplace:
-    #     for i in gdf.iterrows():
-    #         print(ox.utils.ts(), '-', i[1]['Stadt'], '-', i[1]['line_name'])
-    #         dl_info_single = ox.features_from_polygon(polygon=i[1]['buffer_geometry'], tags=data_tags)
-    #         dl_info_single['Stadt']=i[1]['Stadt']
-    #         dl_info_single['line_name']=i[1]['line_name']
-    #         dl_info = pd.concat([dl_info, dl_info_single])
-    # else:
-    #     for i in download_buffer:
-    #         dl_info_single = ox.features_from_polygon(polygon=i, tags=data_tags)
-    #         dl_info = pd.concat([dl_info, dl_info_single])
-    #
-    # # if inplace:
-    # #     gdf['buildings_buffer'] = dl_info
-    #
-    # return dl_info[['geometry', 'Stadt', 'line_name']]
-
 
 def download_buildings_bbox(data_path: str, filename: str = 'cities.csv', force_download: bool = False) -> None:
     data = pd.read_csv(data_path + filename, sep=';')
@@ -133,7 +105,6 @@ def download_buildings_bbox(data_path: str, filename: str = 'cities.csv', force_
         city = row['machine_readable']
         if force_download or not os.path.exists(data_path + city + '/buildings/city_buildings.json'):
             print(ox.utils.ts(), '-', row['Stadt'])
-            #bbox = (float(row['West']), float(row['Sued']), float(row['Ost']), float(row['Nord']))
             bbox = shp.box(float(row['West']), float(row['Sued']), float(row['Ost']), float(row['Nord']))
             bbox_enl = ox.utils_geo.buffer_geometry(bbox, data['Buffer_Width'].max())
             payload = ox.features_from_bbox(bbox=shp.total_bounds(bbox_enl), tags={'building': True})
