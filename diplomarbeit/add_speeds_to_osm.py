@@ -7,6 +7,8 @@ import geopandas as gpd
 import shapely as shp
 import shapely.errors
 
+from .constants import *
+
 
 
 
@@ -224,16 +226,16 @@ def calc_avg_speed_osm(data: pd.DataFrame) -> None:
         data['trip_speed'] = data['distance'] / data['avg_time'] * 3600
 
 
-def main(data_dict: str, city: str, ignore_line_number: bool = False) -> pd.DataFrame:
-    gtfs = pd.read_csv('%s%s/timetable/results/trip_speeds_route_direction.csv' % (data_dict, city))
-    osm = extract_lines(pd.read_csv('%s%s/osm/processed.csv' % (data_dict, city), dtype={'Nummer': 'string'}))
-    match_gtfs_on_osm(osm=osm, gtfs=gtfs, filepath='%s%s/station_matching.csv' % (data_dict, city))
+def main(data_dict: Path, city: str, ignore_line_number: bool = False) -> pd.DataFrame:
+    gtfs = pd.read_csv(data_dict/ city /'timetable/results/trip_speeds_route_direction.csv')
+    osm = extract_lines(pd.read_csv(data_dict/ city /'osm/processed.csv', dtype={'Nummer': 'string'}))
+    match_gtfs_on_osm(osm=osm, gtfs=gtfs, filepath=data_dict/ city /'station_matching.csv')
     new = merge_osm_gtfs(osm=osm, gtfs=gtfs, ignore_line_number=ignore_line_number)
     calc_avg_speed_osm(data=new)
     return new
 
 
 if __name__ == '__main__':
-    data_dict = './data/'
+    data_dict = DATA_DIR
     city = 'lviv'
     main(data_dict, city)

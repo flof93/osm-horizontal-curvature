@@ -6,15 +6,14 @@ from datetime import datetime, timedelta
 import time
 import gtfs_kit as gk
 
-# Pfad zum GTFS-Datensatz angeben
-# path_to_gtfs = "./data/wien/"
+from pathlib import Path
 
 ## FF: make functions callable
-def calc_speeds(path_to_gtfs):
+def calc_speeds(path_to_gtfs: Path):
 
     # GTFS-Datensatz laden
     print(f"Daten einlesen...")
-    routes = pd.read_csv(path_to_gtfs + "routes.txt", dtype={
+    routes = pd.read_csv(path_to_gtfs / "routes.txt", dtype={
         "route_id": "string",
         "agency_id": "string",
         "route_short_name": "string",
@@ -30,7 +29,7 @@ def calc_speeds(path_to_gtfs):
         "network_id": "string",
     })
 
-    trips = pd.read_csv(path_to_gtfs + "trips.txt", dtype={
+    trips = pd.read_csv(path_to_gtfs / "trips.txt", dtype={
         "route_id": "string",
         "service_id": "string",
         "trip_id": "string",
@@ -69,7 +68,7 @@ def calc_speeds(path_to_gtfs):
     # else:
     #     stop_times_path = path_to_gtfs + "stop_times.txt"
 
-    stop_times_path = path_to_gtfs + "stop_times.txt"
+    stop_times_path = path_to_gtfs / "stop_times.txt"
     stop_times = pd.read_csv(stop_times_path, dtype=stop_times_dtypes)
 
     if 'shape_dist_traveled' not in stop_times.columns or stop_times['shape_dist_traveled'].isnull().any() and os.path.exists(path= path_to_gtfs + 'shapes.txt'):
@@ -78,7 +77,7 @@ def calc_speeds(path_to_gtfs):
         stop_times = feed.append_dist_to_stop_times().stop_times
 
     #FF: Einlesen der Stops-Datei
-    stops = pd.read_csv(path_to_gtfs + "stops.txt", dtype={
+    stops = pd.read_csv(path_to_gtfs / "stops.txt", dtype={
         "stop_id": "string",
         "stop_code": "string",
         "stop_name": "string",
@@ -116,11 +115,11 @@ def calc_speeds(path_to_gtfs):
     stop_times_tram = pd.merge(stop_times_tram, trips_tram[['trip_id', 'route_short_name', 'direction_id']], on='trip_id')
 
     # Erstelle neue bereinigte stop_times_tram.txt Datei
-    stop_times_tram.to_csv(path_or_buf=path_to_gtfs+'stop_times_tram.txt',index=False)
+    stop_times_tram.to_csv(path_or_buf=path_to_gtfs/'stop_times_tram.txt',index=False)
 
     # Mit der neuen GTFS stop_times_tram.txt-Datei:
     ## FF: Speichern der stop_times_tram-Datei bei den GTFS-Daten, nicht im wdir
-    with open(path_to_gtfs+'stop_times_tram.txt', 'r', encoding='utf8') as stop_times_file:
+    with open(path_to_gtfs/'stop_times_tram.txt', 'r', encoding='utf8') as stop_times_file:
         stop_times_reader = csv.DictReader(stop_times_file)
 
         # Ein leeres Dictionary für die Berechnung der Durchschnittsgeschwindigkeiten erstellen
@@ -285,17 +284,17 @@ def calc_speeds(path_to_gtfs):
 
         # Schreibe den DataFrame in eine Excel-Datei
         print(f"Schreibe Excel...")
-        os.makedirs(path_to_gtfs + 'results', exist_ok=True)
+        os.makedirs(path_to_gtfs / 'results', exist_ok=True)
         #df1_sorted.to_excel(path_to_gtfs + 'results/sorted_trip_speeds_route_direction' + str(datetime.now().strftime('_%d_%m_%Y')) + '.xlsx', index=False)
         #df1_sorted.to_latex(path_to_gtfs + 'results/trip_speeds_route_direction' + str(datetime.now().strftime('_%d_%m_%Y')) + '.tex', index=False)
 
         ### FF: Ergänzung um Export in csv, zur weiteren Verwendung, entfernung des Datumsstempels
-        df1_sorted.to_csv(path_to_gtfs + 'results/trip_speeds_route_direction' + '.csv', index=False) #+ str(datetime.now().strftime('_%Y_%m_%d'))
+        df1_sorted.to_csv(path_to_gtfs / 'results/trip_speeds_route_direction' + '.csv', index=False) #+ str(datetime.now().strftime('_%Y_%m_%d'))
 
 ### FF: Add function calls:
 if __name__ == "__main__":
     start = time.time()
-    gtfs_path = "./data/berlin/timetable/"
+    gtfs_path = Path("./data/berlin/timetable/")
     calc_speeds(path_to_gtfs= gtfs_path)
     stop = time.time()
     print(f"Took: %s to run" %(str(stop-start)))

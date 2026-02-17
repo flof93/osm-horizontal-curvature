@@ -1,4 +1,5 @@
 import os.path
+from pathlib import Path
 
 import osmnx as ox
 import geopandas as gpd
@@ -153,13 +154,13 @@ def calc_building_density(data: gpd.GeoDataFrame, inplace: bool = False, cleanup
         data.drop(labels=['buffer_geometry', 'clipped_buildings'], axis='columns', inplace=True)
     return densities
 
-def calc_main(data_dict) -> None:
-    data = gpd.read_file(data_dict + 'results.json')
+def calc_main(data_dict: Path) -> None:
+    data = gpd.read_file(data_dict / 'results.json')
     get_buffer_line(data, 'Buffer_Width', True)
     data = clip_lines(data=data)
     calc_building_density(data=data, inplace=True, cleanup=True)
-    data.to_file(data_dict + 'building_data.json')
+    data.to_file(data_dict / 'building_data.json')
 
 if __name__ == '__main__':
-    data_dict = './data/'
+    data_dict = Path('./data/')
     calc_main(data_dict=data_dict)

@@ -6,13 +6,14 @@ from sklearn.linear_model import LinearRegression
 import seaborn as sns
 import pandas as pd
 import geopandas as gpd
+from pathlib import Path
 
 import diplomarbeit as da
 
 UNIT_CONVERSION= {'portland':0.3048, 'san_francisco': 1.609344}
 
 
-def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_times: bool = False):
+def make_whole_dataframe(data_dict: Path, filename: str = 'cities.csv', calc_times: bool = False):
     cities = da.utils.load_csv_input(data_path= data_dict, filename=filename)
     #Todo: Import Orientation data and merge
 
@@ -28,10 +29,10 @@ def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_time
         #     continue
 
         # Aufruf Berechnung der Durchschnittsgeschwindigkeit, falls diese noch nicht berechnet ist und Fahrplandaten vorliegen.
-        if not os.path.exists(path=data_dict + city + '/timetable/results/trip_speeds_route_direction.csv') or calc_times:
-            if os.path.exists(path=data_dict + city + '/timetable/routes.txt'):
+        if not (data_dict / city / 'timetable/results/trip_speeds_route_direction.csv').exists() or calc_times:
+            if (data_dict / city / 'timetable/routes.txt').exists():
                 try:
-                    da.speeds.calc_speeds(path_to_gtfs=data_dict + city + '/timetable/')
+                    da.speeds.calc_speeds(path_to_gtfs=data_dict / city / 'timetable/')
                 except KeyError as e:
                     if 'shape_dist_traveled' in e.args:
                         continue
@@ -49,7 +50,7 @@ def make_whole_dataframe(data_dict: str, filename: str = 'cities.csv', calc_time
         full_data = pd.concat([full_data, gdf])#.dropna(axis='rows')])
 
 
-    cities = pd.read_csv(data_dict + 'cities.csv', sep=';')
+    cities = pd.read_csv(data_dict / 'cities.csv', sep=';')
     # cities['category'] = [
     #     'a' if i < cities['Buffer_Width'].quantile(0.33) else 'c' if i > cities['Buffer_Width'].quantile(
     #         0.66) else 'b' for i in cities['Buffer_Width']]
@@ -80,20 +81,20 @@ def add_subplot(data: pd.DataFrame, x: tuple[str, str], y: tuple[str, str], suba
 
 
 if __name__ == '__main__':
-    data_dict = './data/'
+    data_dict = da.DATA_DIR
     #da.utils.cleanup_input(data_dict)
 
 
-    #data = make_whole_dataframe(data_dict= data_dict, calc_times=False)
-    #data.to_csv(data_dict+'results.csv')
-    #data.to_file(filename=data_dict+'results.json')
+    data = make_whole_dataframe(data_dict= data_dict, calc_times=False)
+    data.to_csv(data_dict / 'results.csv')
+    data.to_file(filename=data_dict / 'results.json')
     #
     # da.buildings.download_buildings_bbox(data_path=data_dict)
-    #da.buildings.calc_main(data_dict=data_dict)
+    da.buildings.calc_main(data_dict=data_dict)
 
     # data = pd.read_csv(data_dict+'results.csv') # Backuplösung, falls gpd nicht funktioniert
 
-    data = gpd.read_file(data_dict+'building_data.json').dropna(axis='index')
+    data = gpd.read_file(data_dict / 'building_data.json').dropna(axis='index')
     data.height_up = data.height_up.astype('float64')
     data.height_down = data.height_down.astype('float64')
 
@@ -139,7 +140,7 @@ if __name__ == '__main__':
 
             add_subplot(data=city_data, x=x_axis[j], y=y_axis[0], subaxis=j, axs=axs)
 
-        plt.savefig(fname=data_dict+i+'/results/corr.png', bbox_inches='tight', pad_inches=0.2, dpi=600)
+        plt.savefig(fname=data_dict/ i /'results'/'corr.png', bbox_inches='tight', pad_inches=0.2, dpi=600)
         plt.close()
 
 

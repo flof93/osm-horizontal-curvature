@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 
 import numpy as np
 import requests
@@ -179,9 +180,9 @@ def download_and_extraxt_gtfs(city: str, gtfs_url: str, data_path: str = './data
         file = zipfile.ZipFile(io.BytesIO(payload.content))
     file.extractall('%s%s/timetable' % (data_path, city))
 
-def load_csv_input(data_path: str, filename: str = 'cities.csv') -> dict:
+def load_csv_input(data_path: Path, filename: str = 'cities.csv') -> dict:
     """loads a csv-File with Cities and returns a dictionary"""
-    file_path = data_path + filename
+    file_path = data_path / filename
     out_dict = {}
     with open(file_path, newline='') as csvfile:
         data = csv.DictReader(csvfile, delimiter=";")#, quotechar='\'', quoting=csv.QUOTE_NONNUMERIC)
