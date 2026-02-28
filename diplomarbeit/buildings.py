@@ -147,7 +147,7 @@ def clip_lines(data: gpd.GeoDataFrame, data_path: str = './data/'):
 
 def calc_building_density(data: gpd.GeoDataFrame, inplace: bool = False, cleanup: bool = False) -> list:
     data.to_crs('EPSG:6933')
-    densities = data['clipped_buildings'].area / data['buffer_geometry'].area
+    densities = data['clipped_buildings'].area / data['buffer_geometry'].area*100
     if inplace:
         data['rho_b'] = densities
     if cleanup and inplace:
