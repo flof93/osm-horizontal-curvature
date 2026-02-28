@@ -33,27 +33,27 @@ COLUMN_NAMES_DE = {'curvature': 'Kurvigkeit [gon/km]',
                    'trip_speed': 'Durchschnittsgeschwindigkeit [km/h]',
                    'height_up': 'Aufstieg [m/km]',
                    'height_down': 'Abstieg [m/km]',
-                   'rho_b': 'Bebauungsdichte [-]',
+                   'rho_b': 'Bebauungsdichte [%]',
                    'gauge': 'Spurweite [mm]',
                    'Buffer_Width': 'Bufferbreite [m]'}
 
-COLUMN_NAMES_TEX_TWO_LINES = {'curvature': r'$\bar\gamma$' + '\n' + r'[gon/km]',
-                    'avg_dist': r'$\bar l_{Hst}$' + '\n' + r'[m]',
-                    'trip_speed': r'$\bar V$' + '\n' + r'[km/h]',
+COLUMN_NAMES_TEX_TWO_LINES = {'curvature': r'$\bar\gamma$' + '\n' + r'$[gon/km]$',
+                    'avg_dist': r'$\bar l_{Hst}$' + '\n' + r'$[m]$',
+                    'trip_speed': r'$\bar V$' + '\n' + r'$[km/h]$',
                     'height_up': r'$\bar s^{\uparrow}$' + '\n' + r'[\textperthousand]',
                     'height_down': r'$\bar s^{\downarrow}$' + '\n' + r'[\textperthousand]',
-                    'rho_b': r'$\rho_B$' + '\n' + r'[1]',
-                    'gauge': r'$G$' + '\n' + r'[mm]',
-                    'Buffer_Width': r'$b_{Buf}$' +'\n'+r'[m]'}
+                    'rho_b': r'$\rho_B$' + '\n' + r'$[\%]$',
+                    'gauge': r'$G$' + '\n' + r'$[mm]$',
+                    'Buffer_Width': r'$b_{Buf}$' +'\n'+r'$[m]$'}
 
-COLUMN_NAMES_TEX = {'curvature': r'$\bar\gamma$ [gon/km]',
-                    'avg_dist': r'$\bar l_{Hst}$ [m]',
-                    'trip_speed': r'$\bar V$ [km/h]',
+COLUMN_NAMES_TEX = {'curvature': r'$\bar\gamma$ $[gon/km]$',
+                    'avg_dist': r'$\bar l_{Hst}$ $[m]$',
+                    'trip_speed': r'$\bar V$ $[km/h]$',
                     'height_up': r'$\bar s^{\uparrow}$ [\textperthousand]',
                     'height_down': r'$\bar s^{\downarrow}$ [\textperthousand]',
-                    'rho_b': r'$\rho_B$ [1]',
-                    'gauge': r'$G$ [mm]',
-                    'Buffer_Width': r'$b_{Buf}$ [m]'}
+                    'rho_b': r'$\rho_B$ $[\%]$',
+                    'gauge': r'$G$ $[mm]$',
+                    'Buffer_Width': r'$b_{Buf}$ $[m]$'}
 
 COLUMN_NAMES_TEX_SHORT = {'curvature': r'$\bar\gamma$',
                           'avg_dist': r'$\bar l_{Hst}$',
@@ -62,7 +62,10 @@ COLUMN_NAMES_TEX_SHORT = {'curvature': r'$\bar\gamma$',
                           'height_down': r'$\bar s^{\downarrow}$',
                           'rho_b': r'$\rho_B$',
                           'gauge': r'$G$',
-                          'Buffer_Width': r'$b_{Buf}$'}
+                          'Buffer_Width': r'$b_{Buf}$',
+                          'distance': r'$l_{Rel}$',
+                          'phi_tram': r'$\phi_{\text{Tram}}$',
+                          'phi_street': r'$\phi_{\text{Straße}}$'}
 
 DATAFIELD_VARIABLENAME = {'region': 'varRegion',
                           'gauge': 'varGauge',
