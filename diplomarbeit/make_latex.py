@@ -8,6 +8,7 @@ import shapely.geometry as shp
 from matplotlib import pyplot as plt
 import geodatasets
 import numpy as np
+from matplotlib.colors import ListedColormap
 
 import diplomarbeit as da
 
@@ -21,42 +22,57 @@ from diplomarbeit import DATA_DIR, DATAFIELD_VARIABLENAME
 
 RESULTS_DIR = Path('~/Documents/Diplomarbeit/osm-horizontal-curvature/results').expanduser()  # TODO: Make LaTeX-Picture directory for Production
 
-# COLUMN_NAMES_DE = {'curvature': 'Kurvigkeit [gon/km]',
-#                    'avg_dist': 'Durchschnittlicher Haltestellenabstand [m]',
-#                    'trip_speed': 'Durchschnittsgeschwindigkeit [km/h]',
-#                    'height_up': 'Aufstieg [m/km]',
-#                    'height_down': 'Abstieg [m/km]',
-#                    'rho_b': 'Bebauungsdichte [-]'}
-#
-# COLUMN_NAMES_TEX = {'curvature': r'$\bar\gamma$' + '\n' + r'[gon/km]',
-#                     'avg_dist': r'$\bar l_{Hst}$' + '\n' + r'[m]',
-#                     'trip_speed': r'$\bar V$' + '\n' + r'[km/h]',
-#                     'height_up': r'$\bar s^{\uparrow}$' + '\n' + r'[\textperthousand]',
-#                     'height_down': r'$\bar s^{\downarrow}$' + '\n' + r'[\textperthousand]',
-#                     'rho_b': r'$\rho_B$' + '\n' + r'[1]'}
-#
-# COLUMN_NAMES_TEX_SHORT = {'curvature': r'$\bar\gamma$',
-#                           'avg_dist': r'$\bar l_{Hst}$',
-#                           'trip_speed': r'$\bar V$',
-#                           'height_up': r'$\bar s^{\uparrow}$',
-#                           'height_down': r'$\bar s^{\downarrow}$',
-#                           'rho_b': r'$\rho_B$'}
-
+def set_print_style(textwidth_cm=16, fontsize=10):
+    inch = textwidth_cm / 2.54
+    sns.set_style('darkgrid')
+    plt.rcParams['text.latex.preamble'] =  " \\usepackage{lmodern}"
+    plt.rcParams.update({
+        'text.usetex': True,
+        'figure.figsize':   (inch, inch * 0.5),
+        'font.size':        fontsize,
+        'axes.titlesize':   fontsize,
+        'axes.labelsize':   fontsize,
+        'xtick.labelsize':  fontsize - 1,
+        'ytick.labelsize':  fontsize - 1,
+        'legend.fontsize':  fontsize - 1,
+        'figure.dpi':       150,   # für Bildschirm; beim Speichern separat setzen
+        'font.family':      'lmodern',
+    })
 
 def add_alidade_smooth(ax, crs=None):
     provider = cx.providers.Stadia.AlidadeSmooth(api_key=da.STADIA_API)
     provider["url"] = provider["url"] + "?api_key={api_key}"
-    cx.add_basemap(ax, crs=crs, url=cx.providers.CartoDB.Positron)  #source=provider)
+    cx.add_basemap(ax, crs=crs, source=cx.providers.CartoDB.Voyager)  #source=provider)
+
+def square_bounds(gdf, padding=0.1):
+    xmin, ymin, xmax, ymax = gdf.total_bounds
+
+    width = xmax - xmin
+    height = ymax - ymin
+    size = max(width, height)
+
+    # add padding
+    size *= (1 + padding)
+
+    cx = (xmin + xmax) / 2
+    cy = (ymin + ymax) / 2
+
+    return (
+        cx - size / 2,
+        cy - size / 2,
+        cx + size / 2,
+        cy + size / 2
+    )
 
 
 def make_geograph_net():
-    results_df = gpd.read_file(da.DATA_DIR / 'building_data.json')
+    results_df = gpd.read_file(da.DATA_DIR / 'building_data.json').dropna(axis='index')
     cities_df = pd.read_csv(da.DATA_DIR / 'cities.csv', sep=';')
 
     cities = results_df.machine_readable.unique()
     for city in cities:
 
-        df_res = results_df[results_df['machine_readable'] == city]
+        df_res = results_df[results_df['machine_readable'] == city].to_crs('EPSG:3857')
         df_cities = cities_df[cities_df['machine_readable'] == city]
 
         df_box = gpd.GeoDataFrame({'geometry': [shp.box(float(df_cities['West'].iloc[0]),
@@ -64,19 +80,25 @@ def make_geograph_net():
                                                             float(df_cities['Ost'].iloc[0]),
                                                             float(df_cities['Nord'].iloc[0]))]}, crs='EPSG:4326')
 
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        xmin, ymin, xmax, ymax = square_bounds(df_res, padding=0.1)
+
+
+        fig, ax = plt.subplots(figsize=(6.3, 6.3))
+        #ax.set_box_aspect(1)
+
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
+        ax.set_aspect("equal")
+
         df_res.plot(ax=ax, color='r')
-        df_box.boundary.plot(ax=ax, color='r')
+        #df_box.boundary.plot(ax=ax, color='r')
         #ax=df_res.plot(cmap='gist_rainbow', figsize=(10,10))
-
-        fig = ax.get_figure()
-        ax.set_box_aspect(1)
-
-        ax.set_axis_off()
 
         add_alidade_smooth(ax, crs=df_res.crs)
 
-        fig.savefig(RESULTS_DIR/'Appendix_Results'/city/'map.png', bbox_inches='tight', pad_inches=0, dpi=200)
+        ax.set_axis_off()
+
+        fig.savefig(RESULTS_DIR/'Appendix_Results'/city/'map.png', pad_inches=0, dpi=200, bbox_inches='tight')
         plt.close(fig)
 
 def weighted_average(data:pd.DataFrame, value, weight):
@@ -94,59 +116,92 @@ def make_city_table(data: gpd.GeoDataFrame):
                 'machine_readable': ['count'],
                 'Stadt': 'first',
                 'ISO3166': 'first',
-                'gauge': 'first',
+                'gauge': lambda x: r"\\ &  ".join(y + '~mm' for y in map(str, map(int, x.unique().tolist()))),
                 'region': 'first',
                 'Buffer_Width': 'mean'}
     grouped = data[
         ['Stadt', 'distance', 'trip_speed', 'number_trips', 'curvature', 'avg_dist', 'rho_b', 'gauge', 'ISO3166',
-         'machine_readable', 'region', 'Buffer_Width']].groupby(by=['ISO3166', 'Stadt']).aggregate(func=agg_func)
-    grouped['trip_speeds_new'] = data.groupby(['ISO3166', 'Stadt']).apply(weighted_average, 'trip_speed',
+         'machine_readable', 'region', 'Buffer_Width']].groupby(by=['region', 'ISO3166', 'Stadt']).aggregate(func=agg_func)
+    grouped['trip_speeds_new'] = data.groupby(['region','ISO3166', 'Stadt']).apply(weighted_average, 'trip_speed',
                                                                                     'number_trips')
 
     grouped.rename(columns={'machine_readable': 'Anzahl Relationen'}, inplace=True)
-    grouped.rename_axis(['ISO3166', 'Stadt']).reset_index(inplace=True)
+    grouped.rename_axis(['Region', 'ISO3166', 'Stadt']).reset_index(inplace=True)
     grouped.columns = grouped.columns.droplevel(1)
-    header = ['Land', 'Stadt', r'$n_{{Linien}}$', r'$\bar V$ [\unit{{\kilo\metre\per\hour}}]',
+    header = ['Region', 'Land', 'Stadt', r'$n_{{Linien}}$', r'$\bar V$ [\unit{{\kilo\metre\per\hour}}]',
               r'$\bar l_{{Hst}}$ [\unit{{\metre}}]']
     df_out = grouped.drop(columns='distance').reindex(
-        ['ISO3166', 'Stadt', 'Anzahl Relationen', 'trip_speeds_new', 'avg_dist'],
+        ['region','ISO3166', 'Stadt', 'Anzahl Relationen', 'trip_speeds_new', 'avg_dist'],
         axis=1)
     df_out.to_latex(RESULTS_DIR / 'cities.tex',
-                    columns=['ISO3166', 'Stadt', 'Anzahl Relationen', 'trip_speeds_new', 'avg_dist'],
+                    columns=['region', 'ISO3166', 'Stadt', 'Anzahl Relationen', 'trip_speeds_new', 'avg_dist'],
                     index=False,
                     header=header,
                     float_format="%.2f",
-                    column_format='llSSS')
+                    column_format='lllSSS')
     return grouped
+
+def make_statistic_table(data: gpd.GeoDataFrame) -> pd.DataFrame:
+    grouped = data[
+        ['Stadt', 'Buffer_Width', 'phi_street', 'phi_tram']].groupby(by=['Stadt']).aggregate(
+        func='first')
+    desc_cit=grouped.describe().T
+    desc_rel = data[['curvature', 'height_up', 'height_down', 'trip_speed', 'avg_dist', 'rho_b']].describe().T
+    desc=pd.concat([desc_cit,desc_rel])
+    desc.rename(da.COLUMN_NAMES_TEX_SHORT, inplace=True)
+    desc['count'] = desc['count'].astype(int)
+    cols={'count':r'$n$', 'mean':r'$\bar x$', 'std':r's', 'min':r'$min$', '25%':r'$Q_{25}$', '50%':r'$Q_{50}$', '75%':r'$Q_{75}$', 'max':r'$max$'}
+    desc.rename(cols, inplace=True, axis=1)
+    desc.to_latex(RESULTS_DIR / 'statistics.tex', float_format="%.4f")
+    return desc
 
 
 def make_worldmap(data: gpd.GeoDataFrame):
-    world = gpd.read_file(geodatasets.get_path("naturalearth.land"))
+    sns.set_style("ticks")
+    url = "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip"
+    world = gpd.read_file(url)
+    from matplotlib.colors import ListedColormap
 
-    grouped = data[['geometry', 'Stadt']].dissolve(by='Stadt')
+    grouped = data[['geometry', 'Stadt', 'region']].dissolve(by='Stadt')
     grouped.to_crs('EPSG:4087', inplace=True)
-    grouped['center'] = grouped.centroid
-    grouped.set_geometry('center')
+    grouped['geometry'] = grouped.geometry.centroid
     grouped.to_crs('EPSG:4326', inplace=True)
 
-    fig, ax = plt.subplots()  #1, 1, figsize=(12, 9))
-    world.to_crs(crs=grouped.crs).plot(ax=ax, alpha=0.2, color="grey")
-    grouped.plot(ax=ax, color='r', marker='+', markersize=5)
+    fig, ax = plt.subplots(1, 1, figsize=(6.3, 4.5))
+    world.to_crs(crs=grouped.crs).plot(ax=ax, alpha=0.1, color="grey")
+    world.to_crs(crs=grouped.crs).boundary.plot(ax=ax, alpha=0.8, color="grey", lw=.5)
+    ax.set_xlim(-180, 180)
+    ax.set_ylim(-90, 90)
 
-    #fig=ax.get_figure()
-    #ax.set_axis_off()
-    #add_alidade_smooth(ax, crs=grouped.crs)
+    minx, miny, maxx, maxy = [-12, 35, 38, 65]
+    axins = ax.inset_axes(
+        (0.04, -0.10, 0.40, 0.85),
+        xlim=(minx, maxx), ylim=(miny, maxy), xticklabels=[], yticklabels=[])
+    world.to_crs(crs=grouped.crs).plot(ax=axins, alpha=0.1, color="grey")
+    world.to_crs(crs=grouped.crs).boundary.plot(ax=axins, alpha=0.8, color="grey", lw=.5)
+    ax.indicate_inset_zoom(axins, edgecolor="black")
 
-    #fig.set_size_inches(10, 3)
+    cmap_muted = sns.color_palette(None, len(grouped.region.unique()))
+    cmap_new = ListedColormap([cmap_muted[x] for x, region in enumerate(data.region.unique())])
+    grouped.plot(ax=ax, marker='o', markersize=10, categorical=True, column='region', legend=True, cmap=cmap_new, zorder=5)
+    grouped.plot(ax=axins, marker='o', markersize=5, categorical=True, column='region', legend=False, cmap=cmap_new, zorder=5)
 
-    fig.savefig(RESULTS_DIR / 'worldmap.png', bbox_inches='tight', pad_inches=0.2, dpi=600)
+    ax.set_yticks([])
+    ax.set_xticks([])
+
+    axins.set_yticks([])
+    axins.set_xticks([])
+
+    #plt.show()
+    fig.savefig(RESULTS_DIR / 'worldmap.png', pad_inches=0.05, dpi=600, bbox_inches='tight')
+    plt.close(fig)
 
 
 def paired_density_and_scatterplot(data: gpd.GeoDataFrame | pd.DataFrame):
-    g = sns.PairGrid(data=data, diag_sharey=False)
-    g.map_upper(sns.scatterplot, s=15, color='C0')
-    g.map_diag(sns.kdeplot, lw=2, color='C1')
-    g.map_lower(sns.kdeplot, linewidths=1, color='C2')
+    g = sns.PairGrid(data=data, diag_sharey=False, height=1.25, aspect=1)
+    g.map_upper(sns.scatterplot, color='C0', s=10, marker='+')
+    g.map_diag(sns.kdeplot, color='C1', lw=1)
+    g.map_lower(sns.kdeplot, color='C2', linewidths=0.5)
     return g
 
 
@@ -174,7 +229,7 @@ def add_subplot(data: pd.DataFrame, x: tuple[str, str], y: tuple[str, str], suba
         intercept_pre = '+' if model.intercept_ > 0 else ''
         axs[subaxis].plot(x_between[:, 0], fx, c="red",
                           label="y={0:.4f}x{3}{1:.2f}\nR²={2:.2f}".format(model.coef_[0], model.intercept_, r_square,
-                                                                          intercept_pre))
+                                                                          intercept_pre).replace('.', ','))
         axs[subaxis].set_xlabel(x[1])
         axs[subaxis].set_ylabel(y[1])
         axs[subaxis].legend()
@@ -183,7 +238,7 @@ def add_subplot(data: pd.DataFrame, x: tuple[str, str], y: tuple[str, str], suba
         intercept_pre = '+' if model.intercept_ > 0 else ''
         axs.plot(x_between[:, 0], fx, c="red",
                           label="y={0:.4f}x{3}{1:.2f}\nR²={2:.2f}".format(model.coef_[0], model.intercept_, r_square,
-                                                                          intercept_pre))
+                                                                          intercept_pre).replace('.', ','))
         axs.set_xlabel(x[1])
         axs.set_ylabel(y[1])
         axs.legend()
@@ -193,9 +248,7 @@ def add_subplot(data: pd.DataFrame, x: tuple[str, str], y: tuple[str, str], suba
 
 
 def make_city_diags(data: gpd.GeoDataFrame):
-    sns.set_style('darkgrid')
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
+    set_print_style()
 
     x_axis = [('curvature', da.COLUMN_NAMES_TEX['curvature']),
               ('avg_dist', da.COLUMN_NAMES_TEX['avg_dist']),
@@ -209,7 +262,7 @@ def make_city_diags(data: gpd.GeoDataFrame):
     for i in data['city'].unique():
         city_data = data[data['city'] == i]
 
-        fig, axs = plt.subplots(nrows=1, ncols=len(x_axis), sharey=True, figsize=(len(x_axis) * 5, 5))
+        fig, axs = plt.subplots(nrows=1, ncols=len(x_axis), sharey=True, figsize=(len(x_axis) * 3, 3))
         #fig.suptitle(city_data['Stadt'].unique()[0], fontsize=16)
 
         axs[0].set_ylim(0, 40)
@@ -223,8 +276,8 @@ def make_city_diags(data: gpd.GeoDataFrame):
 
             add_subplot(data=city_data, x=x_axis[j], y=y_axis[0], subaxis=j, axs=axs)
 
-        plt.savefig(fname=RESULTS_DIR/ 'Appendix_Results' / i / 'corr.png', bbox_inches='tight', pad_inches=0.2)
-        plt.close()
+        plt.savefig(fname=RESULTS_DIR/ 'Appendix_Results' / i / 'corr.png', pad_inches=0.2)
+        plt.close(fig)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~
 # CREATE FILES FOR APPENDIX
@@ -242,7 +295,7 @@ def write_variables_to_file(path: Path, variables_list:dict) -> None:
     payload=''
     for variable in variables_list:
         payload+=variable_to_tex(variable, variables_list[variable])+'\n'
-    payload+=r'\input{Appendix_Results/City_Appendix}'+'\n'+r'\pagebreak'
+    payload+=r'\input{Chapters/City_Appendix}'+'\n'+r'\pagebreak'
     with open(path, 'w') as f:
         f.write(payload)
 
@@ -263,7 +316,7 @@ def has_shape_dist(gtfs_path: Path) -> bool:
 
 def make_city_input(cities:list) -> str:
     out=''
-    for city in cities:
+    for city in sorted(cities):
         out += r'\input{Appendix_Results/' + city + r'/tex_vars.tex}'+'\n'
     return out
 
@@ -303,12 +356,13 @@ def variables_to_tex(data: pd.DataFrame, variables_list: dict) -> dict:
         f.write(payload)
 
     with open(RESULTS_DIR / 'Appendix_Results' / 'input_appendix.tex', 'w') as f:
-        f.write(make_city_input(data.machine_readable.unique()))
+        f.write(make_city_input(data.machine_readable.unique().tolist()))
 
 
 
 
 if __name__ == '__main__':
+    set_print_style(textwidth_cm=16.0, fontsize=10)
     data = gpd.read_file(da.DATA_DIR / 'building_data.json').dropna(axis='index')
     data_de = data.rename(columns=da.COLUMN_NAMES_DE)
     data_tex = data[['curvature', 'height_up', 'height_down', 'trip_speed', 'avg_dist', 'rho_b']].rename(
@@ -316,25 +370,23 @@ if __name__ == '__main__':
     data_tex_short = data[['curvature', 'height_up', 'height_down', 'trip_speed', 'avg_dist', 'rho_b']].rename(
         columns=da.COLUMN_NAMES_TEX_SHORT)
 
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
-
     city_data = make_city_table(data)
+    statistics = make_statistic_table(data)
 
     cities_csv=pd.read_csv(DATA_DIR / 'cities.csv', sep=';')
-    variables_to_tex(city_data.reset_index(drop=True).merge(cities_csv,
-                                                            how='left',
-                                                            left_on=['Stadt', 'ISO3166'],
-                                                            right_on=['Stadt', 'ISO3166'],
-                                                            suffixes=(None,'_y')), DATAFIELD_VARIABLENAME)
+    # variables_to_tex(city_data.reset_index(drop=True).merge(cities_csv,
+    #                                                         how='left',
+    #                                                         left_on=['Stadt', 'ISO3166'],
+    #                                                         right_on=['Stadt', 'ISO3166'],
+    #                                                         suffixes=(None,'_y')), DATAFIELD_VARIABLENAME)
     #make_geograph_net()
     #make_worldmap(data)
 
     #make_city_diags(data)
-    #
-    # g = paired_density_and_scatterplot(data_tex)
-    # g.figure.savefig(RESULTS_DIR / 'paired_density_and_scatterplot.png', dpi=600, bbox_inches='tight')
-    # plt.close(g.figure)
-    #
-    # g = correlation_heatmap(data_tex_short)
-    # g.figure.savefig(RESULTS_DIR / 'correlation_heatmap.png', dpi=600, bbox_inches='tight')
+
+    #g = paired_density_and_scatterplot(data_tex)
+    #g.figure.savefig(RESULTS_DIR / 'paired_density_and_scatterplot.png', dpi=600, bbox_inches='tight')
+    #plt.close(g.figure)
+
+    #g = correlation_heatmap(data_tex_short)
+    #g.figure.savefig(RESULTS_DIR / 'correlation_heatmap.png', dpi=600, bbox_inches='tight')
