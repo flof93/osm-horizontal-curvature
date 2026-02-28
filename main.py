@@ -15,7 +15,7 @@ UNIT_CONVERSION= {'portland':0.3048, 'san_francisco': 1.609344}
 
 def make_whole_dataframe(data_dict: Path, filename: str = 'cities.csv', calc_times: bool = False):
     cities = da.utils.load_csv_input(data_path= data_dict, filename=filename)
-    #Todo: Import Orientation data and merge
+    orientations = pd.read_csv(data_dict / 'orientations.csv')
 
     full_data = pd.DataFrame()
 
@@ -57,6 +57,7 @@ def make_whole_dataframe(data_dict: Path, filename: str = 'cities.csv', calc_tim
 
 
     full_data = full_data.merge(right=cities, right_on=['machine_readable'], left_on=['city'])
+    full_data = full_data.merge(right=orientations, right_on=['Stadt'], left_on=['Stadt'])
     full_data.drop(axis='columns', inplace=True,
              labels=['Ost', 'West', 'Nord', 'Sued', 'RailModes', 'Geschwindigkeit', 'GTFS-Daten', 'Ignore_LineNumber'])
     full_data['region'] = [da.REGION_DICT[i] for i in full_data['ISO3166']]
@@ -84,9 +85,8 @@ if __name__ == '__main__':
     data_dict = da.DATA_DIR
     #da.utils.cleanup_input(data_dict)
 
-
     data = make_whole_dataframe(data_dict= data_dict, calc_times=False)
-    data.to_csv(data_dict / 'results.csv')
+    #data.to_csv(data_dict / 'results.csv')
     data.to_file(filename=data_dict / 'results.json')
     #
     # da.buildings.download_buildings_bbox(data_path=data_dict)
