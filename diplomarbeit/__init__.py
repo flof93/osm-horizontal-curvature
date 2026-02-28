@@ -5,3 +5,4 @@ from .speeds import *
 from .buildings import *
 from .constants import *
 from .make_latex import *
+from .entropy import *
