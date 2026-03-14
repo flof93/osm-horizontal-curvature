@@ -68,7 +68,8 @@ class Curvy:
         self.lon_ne = lon_ne
         self.lat_ne = lat_ne
 
-        self.utm_proj = pyproj.Proj(convert_wgs_to_utm((self.lon_ne+self.lon_sw)/2, (self.lat_ne+self.lat_sw)/2)) #proj='utm', zone=32, ellps='WGS84', preserve_units=True)
+        # FF project Curvy to UTM for clean calculations
+        self.utm_proj = pyproj.Proj(convert_wgs_to_utm((self.lon_ne+self.lon_sw)/2, (self.lat_ne+self.lat_sw)/2))
         self.geod = pyproj.Geod(ellps='WGS84')
 
         self.desired_railway_types = desired_railway_types
@@ -83,6 +84,7 @@ class Curvy:
         self.query_results = {rw_type: {"track_query": QueryResult,
                                         "route_query": QueryResult} for rw_type in self.desired_railway_types}
 
+        # FF: set crs on MultiDiGraph (to make it usable with OSMnx
         self.G = nx.MultiDiGraph(crs=self.utm_proj.crs)
 
         if download:
@@ -109,15 +111,8 @@ class Curvy:
         if railway_type not in Curvy.supported_railway_types:
             raise ValueError("The desired railway type %s is not supported" % railway_type)
 
-        # track_query = """(node[""" + "railway" + """=""" + railway_type + """](""" + str(self.lat_sw) + """,""" + str(
-        #     self.lon_sw) + """,""" + str(self.lat_ne) + """,""" + str(self.lon_ne) + """);
-        #                  way[""" + "railway" + """=""" + railway_type + """](""" + str(self.lat_sw) + """,""" + str(
-        #     self.lon_sw) + """,""" + str(self.lat_ne) + """,""" + str(self.lon_ne) + """););
-        #                  (._;>;);
-        #                  out body;
-        #               """
-
-        ### FF: rewrite um die Wegpunkte und Wege rekursiv abzufragen, [!'rack'] verwirft Zahnradbahnen
+        # FF: rewrite to get waypoints and ways recursive
+        # [!'rack'] verwirft Zahnradbahnen
         track_query = ("""rel[route = """+ railway_type + """]("""+ str(self.lat_sw) +""","""+ str(self.lon_sw) + ""","""+ str(self.lat_ne) + ""","""+ str(self.lon_ne) + """) -> .relation;
                        nw[!'rack'](r.relation);
                        (._;>>;);
@@ -148,12 +143,6 @@ class Curvy:
 
         # Download data for all desired railway types
         if internet():
-
-            # gen = ((x,y) for x in railway_types for y in railway_types)
-            # res =[]
-            # for u,v in gen:
-            #     res.append((u,v))
-
             for railway_type in tqdm(railway_types, desc= 'Downloading', position=1, colour='yellow'):
                 # Create Overpass queries and try downloading them
                 logger.info("Querying data for railway type: %s" % railway_type)
@@ -190,6 +179,7 @@ class Curvy:
                         rel_way_ids = [mem.ref for mem in rel.members if
                                        type(mem) == overpy.RelationWay and not mem.role]
 
+                        # FF: Rewrite to use Graphs to get Start- and Endpoints.
                         line_G = nx.MultiGraph(crs=self.utm_proj.crs)
                         line_G.add_nodes_from([(n.id, n.__dict__['attributes']) for n in self.nodes])
                         rel_ways = [w for w in trk_result.result.ways if w.id in rel_way_ids]
@@ -203,7 +193,7 @@ class Curvy:
                         first_node = None
                         end_nodes_line = []
 
-                        if len(end_nodes)>=2: # geschlossene Kreise werden wie vorher behandelt
+                        if len(end_nodes)>=2: # closed loops get treated as before.
                             if not any([n.id in end_nodes for n in self.way_dict[rel_way_ids[0]].nodes]):
                                 logger.warning('Relation <%s> starts in the middle, ignoring this relation!' % rel.id)
                                 continue
@@ -234,7 +224,6 @@ class Curvy:
                                     logger.exception('Exception %s in Relation <%s>!' % (e.args, rel.id))
                                     raise e
 
-                            # Todo: Stitch longer parts (~100m) together at shortest gap
                             try:
                                 chosen_node = max(possible_paths, key=possible_paths.get)
                             except ValueError as e:
@@ -257,9 +246,6 @@ class Curvy:
                             sort_order = {w_id: idx for w_id, idx in zip(rel_way_ids, range(len(rel_way_ids)))}
                             rel_ways.sort(key=lambda w: sort_order[w.id])
                             self.railway_lines.append(OSMRailwayLine(rel.id, rel_ways, rel.tags, rel.members))
-
-
-
 
 
         else:
@@ -361,8 +347,12 @@ class Curvy:
         """
         return [line for line in self.railway_lines if re.search(r'\b{0}\b'.format(name), line.name)]
 
-    def save(self, path:str):
-
+    # FF: added to make saving of Curvy possible
+    def save(self, path: str) -> None:
+        """
+        Saves Curvy as pickle-File
+        :param path:
+        """
         with open(path, 'wb') as file:
             pickle.dump(self, file)
 

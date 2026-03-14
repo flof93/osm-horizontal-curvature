@@ -8,8 +8,6 @@ import overpy
 import pyproj
 
 from geopy.distance import geodesic
-
-
 from curvy.utils import generate_random_color, poly_quadratic
 
 logger = logging.getLogger(__name__)
@@ -43,6 +41,8 @@ class OSMRelation:
         self.x, self.y = self.convert_lon_lat_to_xy(self.lon, self.lat)
         self.s, self.ds = self.compute_distance_from_lon_lat(self.lon, self.lat)
         self.c = self.compute_curvature(self.x, self.y)
+
+        # FF: calculate curviness (change of angle)
         self.gamma, self.dgamma = self.compute_angles_from_xy(self.x, self.y)
 
         self.offset = 0
@@ -177,6 +177,8 @@ class OSMRelation:
         else:
             return []
 
+
+    # FF: calculate angles to get curviness
     @staticmethod
     def compute_angles_from_xy(x: List[float], y: List[float]) -> Tuple[list, list]:
         """ Calculates the change of angle between a set of coordinates
@@ -212,10 +214,6 @@ class OSMRelation:
 
                     x3 = x[i + 1]
                     y3 = y[i + 1]
-
-                    # # Get distance between each of the points
-                    # s_a = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) # 1-2
-                    # s_b = math.sqrt((x2 - x3) ** 2 + (y2 - y3) ** 2) # 2-3
 
                     # Get angles between x-axis and connections 1-2 (a) or 2-3 (b) respectively:
                     try:
