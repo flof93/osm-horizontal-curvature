@@ -2,8 +2,6 @@
 # OFFENE TODOS #
 #==============#
 
-# TODO: Doc-Strings und Dokumentation
-
 #===========#
 # Parkplatz #
 #===========#
@@ -129,7 +127,7 @@ ox.plot_graph(barcelona, figsize=(10, 10), bgcolor='w', edge_color='k', node_col
 coords: dict = load_csv_input("cities.csv")
 coords = {'Budapest':{'coords':(18.8,47.30,19.40,47.70), 'modes':['tram','light_rail']}} # For testing purposes
 coords = {'Gmunden': {'coords': (13.77,47.90,14,48), 'modes': ['tram', 'light_rail']}}  # For testing purposes
-bbox = da.utils.get_bounding_box('Portland')
+bbox = da.utils.get_bounding_box('Portland',,
 coords = {'Portland':{'coords':(bbox[2]-1, bbox[0]-1, bbox[3], bbox[1]), 'modes':['tram', 'light_rail']}}
 
 print ('Loading Cities')
