@@ -61,13 +61,6 @@ def calc_speeds(path_to_gtfs: Path):
         "timepoint": "Int64",
     }
 
-    # Überprüfung ob es eine verbesserte stop-times.txt gibt (Ergänzung von fehlenden shape_dist_traveled)
-
-    # if os.path.exists(path_to_gtfs + "stop_times_with_shape_dist.txt"):
-    #     stop_times_path = path_to_gtfs + "stop_times_with_shape_dist.txt"
-    # else:
-    #     stop_times_path = path_to_gtfs + "stop_times.txt"
-
     stop_times_path = path_to_gtfs / "stop_times.txt"
     stop_times = pd.read_csv(stop_times_path, dtype=stop_times_dtypes)
 
@@ -294,7 +287,7 @@ def calc_speeds(path_to_gtfs: Path):
 ### FF: Add function calls:
 if __name__ == "__main__":
     start = time.time()
-    gtfs_path = Path("./data/berlin/timetable/")
+    gtfs_path = Path("./data/berlin/timetable/") # Test case.
     calc_speeds(path_to_gtfs= gtfs_path)
     stop = time.time()
     print(f"Took: %s to run" %(str(stop-start)))
