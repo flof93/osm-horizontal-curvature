@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm
@@ -17,8 +18,24 @@ import diplomarbeit as da
 logger = logging.getLogger(__name__)
 
 
-def plt_curvature(line, plt_radius = False ,error_bounds = False, filter_savgol = False, savgol_win_l = 51, savgol_poly_o = 3):
+def plt_curvature(line: curvy.curvy.OSMRailwayLine,
+                  plt_radius: bool = False,
+                  error_bounds: bool = False,
+                  filter_savgol: bool = False,
+                  savgol_win_l: int = 51,
+                  savgol_poly_o: int = 3) -> None:
+    """
+    Not used in production!
+    -----------------------
+    Plots the curvature of a given RailwayLine.
 
+    :param line: curvy.curvy.OSMRailwayLine to plot
+    :param plt_radius: if True: calculates the Radii of line and adds it to the plot
+    :param error_bounds: if True: calculates the error bounds of line and adds it to the plot
+    :param filter_savgol: if True: adds a Savitzky Golay Filter to the plot
+    :param savgol_win_l: The length of the filter window.
+    :param savgol_poly_o: The order of the polynomial used to fit the samples.
+    """
     fig, ax = plt.subplots(1, 1)
 
     ax.set_xlabel("Distances s [m]")
@@ -26,15 +43,15 @@ def plt_curvature(line, plt_radius = False ,error_bounds = False, filter_savgol 
 
     ax.plot(line.s, line.c)
 
-    if plt_radius: # Zeigt Radius im Graph an (Hinterfragenswert, siehe Bettinger et.al.)
-        ax.plot(line.s, np.divide(1,line.c))
+    if plt_radius:  # Zeigt Radius im Graph an (Hinterfragenswert, siehe Bettinger et.al.)
+        ax.plot(line.s, np.divide(1, line.c))
 
-    if error_bounds: # Zeigt Fehlerbereich nach Bettinger et.al. an
+    if error_bounds:  # Zeigt Fehlerbereich nach Bettinger et.al. an
         lower, upper = line.get_error_bounds()
         ax.plot(line.s, lower)
         ax.plot(line.s, upper)
 
-    if filter_savgol: # legt Savitzky-Golay filter über Krümmung
+    if filter_savgol:  # legt Savitzky-Golay filter über Krümmung
         sav_gol = scipy.signal.savgol_filter(line.c, savgol_win_l, savgol_poly_o)
         ax.plot(line.s, sav_gol)
 
@@ -44,17 +61,35 @@ def plt_curvature(line, plt_radius = False ,error_bounds = False, filter_savgol 
 
     plt.show()
 
-def plt_line(line, x_y=True):
+
+def plt_line(line: curvy.curvy.OSMRailwayLine, x_y: bool = True) -> None:
+    """
+    Plots the coordinates of line. Used for to check if download worked.
+    :param line: curvy.curvy.OSMRailwayLine to plot
+    :param x_y: if True: use x & y coordinates instead of Longitude and Latitude
+
+    Not used in production!
+    -----------------------
+    """
     fig, ax = plt.subplots(1, 1)
     if x_y:
-        ax.plot(line.x,line.y,color=line.color)
+        ax.plot(line.x, line.y, color=line.color)
     else:
         ax.plot([float(i) for i in line.lon], [float(i) for i in line.lat], color=line.color)
     ax.grid()
     plt.suptitle(line.name)
     plt.show()
 
-def plt_line_curvature(line):
+
+def plt_line_curvature(line: curvy.curvy.OSMRailwayLine) -> None:
+    """
+    Plots the geographic representation, curvature and curviness into one plot.
+
+    :param line: curvy.curvy.OSMRailwayLine to plot
+
+    Not used in production!
+    -----------------------
+    """
     fig, ax = plt.subplots(3, 1)
     ax[0].plot(line.x, line.y, color=line.color)
     ax[1].plot(line.s, line.c)
@@ -69,10 +104,19 @@ def plt_line_curvature(line):
 
     #ax.grid()
 
-def plt_network(network : curvy.Curvy, city: str = ""):
+
+def plt_network(network: curvy.Curvy, city: str = "") -> None:
+    """
+    Plots the whole network.
+    :param network: Curvy containing the information of the Network
+    :param city: Name of the City, used in title of plot
+
+    Not used in production!
+    -----------------------
+    """
     fig, ax = plt.subplots()
     for line in network.railway_lines:
-        ax.plot(line.lon,line.lat,color=line.color)
+        ax.plot(line.lon, line.lat, color=line.color)
     ax.grid()
     if city:
         fig.suptitle(city)
@@ -81,11 +125,14 @@ def plt_network(network : curvy.Curvy, city: str = ""):
     plt.show()
 
 
-
-
-
-
-def load_data(coordinates: dict, force_download: bool = False, data_path: str = './data/') -> dict[Any, Any]:
+def load_data(coordinates: dict, data_path: Path, force_download: bool = False) -> dict[Any, Any]:
+    """
+    Loads curvy data from OSM
+    :param coordinates: Bounding boxes of Areas where tram network is searched.
+    :param force_download: if True: force redownload of Curvy
+    :param data_path: Path to data directory
+    :return:
+    """
     networks = {}
 
     for location in tqdm(coordinates, desc='Loading OSM-Data'):
@@ -93,7 +140,7 @@ def load_data(coordinates: dict, force_download: bool = False, data_path: str = 
 
         download = force_download
         try:
-            with open(data_path + location + "/osm/raw_data.pickle", "rb") as file:
+            with open(data_path / location / "osm" / "raw_data.pickle", "rb") as file:
                 new_network = pickle.load(file)
                 logger.info("Loaded City %s from disk" % location)
 
@@ -101,23 +148,31 @@ def load_data(coordinates: dict, force_download: bool = False, data_path: str = 
             logger.info("%s.pickle not found" % location)
             download = True
 
-
         if download:
             logger.info("Starting download of %s" % location)
             new_network: curvy.Curvy = curvy.Curvy(*coordinates[location]['coords'],
-                                             desired_railway_types = coordinates[location]['modes'],
-                                             download=True, recurse='>')  # Liest die Tramstrecken aus
-            new_network.save(data_path + location + "/osm/raw_data.pickle")
+                                                   desired_railway_types=coordinates[location]['modes'],
+                                                   download=True, recurse='>')  # Liest die Tramstrecken aus
+            new_network.save(str(data_path / location / "osm" / "raw_data.pickle"))
             logger.info("Saved %s as Pickle" % location)
 
         networks[location] = new_network
 
     return networks
 
-def main(data_path: str = './data/', force_download: bool = False, generate_heights: bool = False):
+
+def main(data_path: Path, force_download: bool = False, generate_heights: bool = False) -> None:
+    """
+    Starts Download of Line data.
+    :param data_path: Path of data directory
+    :param force_download: if True: force redownload
+    :param generate_heights: if True: calculate Heights.
+    :return: None. Saves line Data for every City in the respective folder in data_path.
+    :rtype: None
+    """
     coords: dict = da.utils.load_csv_input(data_path=data_path, filename='cities.csv')
     logger.info('Beginning Loading Cities')
-    netzwerke = load_data(coordinates= coords, force_download=force_download, data_path = data_path)
+    netzwerke = load_data(coordinates=coords, force_download=force_download, data_path=data_path)
 
     logger.info('Cities added, generating DataFrames and calculating Heights.\n')
     for city in tqdm(netzwerke, desc='Generating Heights'):
@@ -130,10 +185,8 @@ def main(data_path: str = './data/', force_download: bool = False, generate_heig
 
     return None
 
+
 if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(filename='myapp.log', level=logging.INFO, format=FORMAT)
-    netze = main(force_download=False, generate_heights=False)
-
-
-
+    main(force_download=False, generate_heights=False, data_path=da.DATA_DIR)

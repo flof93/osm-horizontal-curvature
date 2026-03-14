@@ -108,7 +108,15 @@ def extract_lines(network: pd.DataFrame) -> gpd.GeoDataFrame:
     return df_lines
 
 
-def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inline: bool = True) -> dict:
+def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str|Path, inline: bool = True) -> dict:
+    """
+    Matches OSM-Station names on Names from GTFS-Static
+    :param osm: pandas.DataFrame containing station information from OSM
+    :param gtfs: pandas.DataFrame containing station information from GTFS-Static feed
+    :param filepath: filepath for storing matching_dict.csv for later usage
+    :param inline: if True: adds GTFS-Columns to osm
+    :return: dict which mapps OSM->GTFS
+    """
     try:
         df = pd.read_csv(filepath_or_buffer=filepath)
         matching_dict = dict(df.to_dict(orient='tight')['data'])
@@ -154,6 +162,15 @@ def match_gtfs_on_osm(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inli
 
 
 def match_gtfs_on_osm_alt(osm: pd.DataFrame, gtfs: pd.DataFrame, filepath: str, inline: bool = True) -> dict:
+    """
+    Alternative Matching algorithm (maps GTFS->OSM).
+    Not used in production.
+    :param osm: pandas.DataFrame containing station information from OSM
+    :param gtfs: pandas.DataFrame containing station information from GTFS-Static feed
+    :param filepath: filepath for storing matching_dict.csv for later usage
+    :param inline: if True: adds OSM-Columns to gtfs
+    :return: dict which mapps GTFS->OSM
+    """
     try:
         df = pd.read_csv(filepath_or_buffer=filepath)
         matching_dict = dict(df.to_dict(orient='tight')['data'])
@@ -226,7 +243,14 @@ def calc_avg_speed_osm(data: pd.DataFrame) -> None:
         data['trip_speed'] = data['distance'] / data['avg_time'] * 3600
 
 
-def main(data_dict: Path, city: str, ignore_line_number: bool = False) -> pd.DataFrame:
+def main(data_dict: Path, city: str|Path, ignore_line_number: bool = False) -> pd.DataFrame:
+    """
+    Calls the required functions to add the speeds to the Data and to map the Stations.
+    :param data_dict: Path to the data directory
+    :param city: which city to read from data directory
+    :param ignore_line_number: bool, controls if Line Number (OSM-Tag 'ref') is used as feature in merge.
+    :return: combined DataFrame
+    """
     gtfs = pd.read_csv(data_dict/ city /'timetable/results/trip_speeds_route_direction.csv')
     osm = extract_lines(pd.read_csv(data_dict/ city /'osm/processed.csv', dtype={'Nummer': 'string'}))
     match_gtfs_on_osm(osm=osm, gtfs=gtfs, filepath=data_dict/ city /'station_matching.csv')
@@ -237,5 +261,5 @@ def main(data_dict: Path, city: str, ignore_line_number: bool = False) -> pd.Dat
 
 if __name__ == '__main__':
     data_dict = DATA_DIR
-    city = 'lviv'
+    city = 'lviv' # Testcase
     main(data_dict, city)
